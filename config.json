@@ -1,0 +1,16 @@
+{
+  "nr_episodes":                100,
+  "max_steps":                  100,
+  "critic_type":                "table",
+  "nn_dims":                    [15, 20, 30, 5, 1],
+  "actor_learning_rate":        0.70,
+  "critic_learning_rate":       0.70,
+  "actor_elig_decay_rate":      0.90,
+  "critic_elig_decay_rate":     0.90,
+  "actor_discount_factor":      0.90,
+  "critic_discount_factor":     0.90,
+  "init_not_greedy_prob":       0.50,
+  "not_greedy_prob_decay_fact": 0.90,
+  "display":                    0,
+  "frame_delay":                1
+}

@@ -1,10 +1,10 @@
 import copy
 import random
 
-import critic
+import agent.critic
 
 
-class CriticTable(critic.Critic):
+class CriticTable(agent.critic.Critic):
     def __init__(self, learning_rate, discount_factor, trace_decay_fact):
         super().__init__()
         self.__learning_rate = learning_rate        # alpha

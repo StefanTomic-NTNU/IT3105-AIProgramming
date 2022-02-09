@@ -3,13 +3,14 @@ import random
 
 
 class Actor:
-    def __init__(self, learning_rate, discount_factor, trace_decay_fact, not_greedy_prob):
-        self.__learning_rate = learning_rate        # alpha
-        self.__discount_factor = discount_factor    # gamma
-        self.__trace_decay_fact = trace_decay_fact  # lambda
-        self.__not_greedy_prob = not_greedy_prob    # epsilon
-        self.__policy = dict()                      # Π(s, a) -> value
-        self.__elig = dict()                        # e(s, a) -> eligibility
+    def __init__(self, learning_rate, discount_factor, trace_decay_fact, init_not_greedy_prob, not_greedy_prob_decay_fact):
+        self.__learning_rate = learning_rate            # alpha
+        self.__discount_factor = discount_factor        # gamma
+        self.__trace_decay_fact = trace_decay_fact      # lambda
+        self.__not_greedy_prob = init_not_greedy_prob   # epsilon
+        self.__not_greedy_prob_decay_fact = not_greedy_prob_decay_fact
+        self.__policy = dict()                          # Π(s, a) -> value
+        self.__elig = dict()                            # e(s, a) -> eligibility
         self.__chosen_action = None
 
     def get_chosen_action(self):
@@ -108,3 +109,6 @@ class Actor:
 
     def reset_elig(self):
         self.__elig.clear()
+
+    def decay_not_greedy_prob(self):
+        self.__not_greedy_prob *= self.__not_greedy_prob_decay_fact
