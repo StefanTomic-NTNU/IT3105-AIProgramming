@@ -67,12 +67,12 @@ class Hanoi(gym.Env):
             info["invalid_action"] = True
 
         if self.current_state == self.goal_state:
-            reward = 100
+            reward = 3000
             self.done = True
         elif info["invalid_action"] == True:
-            reward = -1
+            reward = -100
         else:
-            reward = 0
+            reward = -1
 
         return self.current_state, reward, self.done, info
 

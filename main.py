@@ -1,5 +1,7 @@
 import copy
 import json
+import random
+
 import gym
 
 import matplotlib.pyplot as plt
@@ -56,23 +58,24 @@ if __name__ == '__main__':
     for i_episode in range(nr_episodes):
         sum_reward = 0
         observation = env.reset()
-        new_state = None
-        new_actions = None
+        new_state = copy.copy(observation)
+        new_actions = process_actions(env, env.action_space)
+
+        agent.actor.update_chosen_action(new_state, new_actions)
+        chosen_action = agent.get_action()
+
         for t in range(max_steps):
             env.render()
 
-            prev_state = copy.copy(observation)
-            prev_actions = copy.copy(env.action_space)
-
-            chosen_action = agent.get_action()
-            if chosen_action is None:
-                chosen_action = env.action_space.sample()
-            # else:
-            #     chosen_action = Discrete(agent.get_action())
+            prev_state = copy.copy(new_state)
+            prev_actions = copy.copy(new_actions)
 
             observation, reward, done, info = env.step(chosen_action)
 
             sum_reward += reward
+
+            agent.update_chosen_action(new_state, new_actions)
+            chosen_action = agent.get_action()
 
             prev_state = process_state(prev_state)
             prev_actions = process_actions(env, prev_actions)
@@ -85,7 +88,7 @@ if __name__ == '__main__':
             # print(f'New state: {new_state}')
             # print(f'New actions: {new_actions}')
 
-            agent.learn(prev_state, prev_actions, reward, new_state, new_actions, done)
+            agent.learn(prev_state, prev_actions, chosen_action, reward, new_state, new_actions, done)
 
             if done:
                 print("Episode finished after {} timesteps, with reward {}".format(t + 1, sum_reward))
@@ -94,7 +97,6 @@ if __name__ == '__main__':
         scores.append(sum_reward)
         print(f'Episode: {i_episode}')
         print(f'Final state: {new_state}')
-        print(f'Final actions: {new_actions}')
         print(f'Final score: {sum_reward}')
         print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
         # print(f'Policy size: {len(agent.actor.get_policy())}')

@@ -37,16 +37,17 @@ class Agent:
     #     self.critic.init_eval(init_state)
     #     self.actor.init_policy(init_state, init_actions)
 
-    def learn(self, prev_state, prev_actions, reward, new_state, new_actions, done):
+    def learn(self, prev_state, prev_actions, chosen_action, reward, new_state, new_actions, done):
         if done:
             self.new_episode()
 
-        self.actor.update_chosen_action(new_state, new_actions)
-        self.actor.update_elig(prev_state, prev_actions)
+        # self.actor.update_chosen_action(new_state, new_actions)
+        self.actor.update_elig(prev_state, chosen_action)
 
         self.critic.update_td_error(prev_state, new_state, reward)
         self.critic.update_elig(prev_state)
 
+        # ∀(s,a) ∈ current episode:
         self.critic.update_evals()
         self.critic.decay_eligs()
 
@@ -60,3 +61,6 @@ class Agent:
 
     def get_action(self):
         return self.actor.get_chosen_action()
+
+    def update_chosen_action(self, new_state, new_actions):
+        self.actor.update_chosen_action(new_state, new_actions)
