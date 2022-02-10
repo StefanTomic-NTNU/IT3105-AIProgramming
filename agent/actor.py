@@ -18,8 +18,7 @@ class Actor:
 
     def get_optimal_action(self, state, actions):
         """ Picks action greedily """
-        self.init_policy(state, actions)
-        optimal_action = None
+        optimal_action = actions[0]
         for action in actions:
             if self.__policy[(state, action)] >= self.__policy[(state, optimal_action)]:
                 optimal_action = action
@@ -32,9 +31,9 @@ class Actor:
         :param actions: a
         :return:
         """
+        self.init_policy(state, actions)
         if random.uniform(0, 1) < 1 - self.__not_greedy_prob:
             self.__chosen_action = self.get_optimal_action(state, actions)
-        self.init_policy(state, actions)
         self.__chosen_action = random.choice(actions)
 
     def init_policy(self, state, actions):
@@ -46,7 +45,7 @@ class Actor:
             if (state, action) not in self.__policy:
                 self.__policy[(state, action)] = 0
 
-    def init_elig(self, state, actions):
+    def init_eligs(self, state, actions):
         """
         Reset eligibilities in actor: e(s,a) ← 0 ∀s,a
         :param state:   state
@@ -54,8 +53,17 @@ class Actor:
         :return:
         """
         for action in actions:
-            if (state, action) not in self.__elig:
-                self.__elig[(state, action)] = 0
+            self.init_elig(state, action)
+
+    def init_elig(self, state, action):
+        """
+        Reset eligibilities in actor: e(s,a) ← 0 ∀s,a
+        :param action:  a
+        :param state:   state
+        :return:
+        """
+        if (state, action) not in self.__elig:
+            self.__elig[(state, action)] = 0
 
     def update_policies(self, delta):
         """
@@ -75,6 +83,7 @@ class Actor:
         :return:
         """
         if (state, action) in self.__policy:
+            self.init_elig(state, action)
             self.__policy[(state, action)] = self.__policy[(state, action)] + \
                                              self.__learning_rate * delta * \
                                              self.__elig[(state, action)]
@@ -112,3 +121,9 @@ class Actor:
 
     def decay_not_greedy_prob(self):
         self.__not_greedy_prob *= self.__not_greedy_prob_decay_fact
+
+    def get_not_greedy_prob(self):
+        return self.__not_greedy_prob
+
+    def get_policy(self):
+        return self.__policy

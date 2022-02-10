@@ -33,6 +33,8 @@ class CriticTable(agent.critic.Critic):
         :param state:   s
         :return:
         """
+        self.update_elig(state)
+        self.init_eval(state)
         self.__eval[state] = self.__eval[state] + \
                              self.__learning_rate * \
                              self.__td_error * \
@@ -46,6 +48,8 @@ class CriticTable(agent.critic.Critic):
         :param reward:      rewards received from state transition
         :return:
         """
+        self.init_eval(prev_state)
+        self.init_eval(new_state)
         self.__td_error = reward + self.__discount_factor * \
                           self.__eval[prev_state] - \
                           self.__eval[new_state]
@@ -59,7 +63,8 @@ class CriticTable(agent.critic.Critic):
         :param state:
         :return:
         """
-        self.__elig[state] = 1
+        if state not in self.__elig:
+            self.__elig[state] = 1
 
     def decay_eligs(self):
         for state in self.__elig:
@@ -77,3 +82,6 @@ class CriticTable(agent.critic.Critic):
 
     def reset_elig(self):
         self.__elig.clear()
+
+    def get_eval(self):
+        return self.__eval

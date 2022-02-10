@@ -33,14 +33,11 @@ class Agent:
         else:
             raise Exception('Critic must be of type "table" or "nn"')
 
-    def initialize(self, init_state, init_actions):
-        self.critic.init_eval(init_state)
-        self.actor.init_policy(init_state, init_actions)
+    # def initialize(self, init_state, init_actions):
+    #     self.critic.init_eval(init_state)
+    #     self.actor.init_policy(init_state, init_actions)
 
-    def process_state(self, state):
-        return state
-
-    def learn(self, prev_state, prev_actions, chosen_action, reward, new_state, new_actions, done):
+    def learn(self, prev_state, prev_actions, reward, new_state, new_actions, done):
         if done:
             self.new_episode()
 
