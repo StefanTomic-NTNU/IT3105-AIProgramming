@@ -34,7 +34,8 @@ class Actor:
         self.init_policy(state, actions)
         if random.uniform(0, 1) < 1 - self.__not_greedy_prob:
             self.__chosen_action = self.get_optimal_action(state, actions)
-        self.__chosen_action = random.choice(actions)
+        else:
+            self.__chosen_action = random.choice(actions)
 
     def init_policy(self, state, actions):
         """

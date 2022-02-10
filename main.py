@@ -65,7 +65,7 @@ if __name__ == '__main__':
             prev_actions = copy.copy(env.action_space)
 
             chosen_action = agent.get_action()
-            if not chosen_action:
+            if chosen_action is None:
                 chosen_action = env.action_space.sample()
             # else:
             #     chosen_action = Discrete(agent.get_action())
@@ -97,11 +97,11 @@ if __name__ == '__main__':
         print(f'Final actions: {new_actions}')
         print(f'Final score: {sum_reward}')
         print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
-        print(f'Policy size: {len(agent.actor.get_policy())}')
-        print(f'Eval size: {len(agent.critic.get_eval())}')
+        # print(f'Policy size: {len(agent.actor.get_policy())}')
+        # print(f'Eval size: {len(agent.critic.get_eval())}')
         print('\n\n')
         sum_reward = 0
-        env.reset()
+        agent.new_episode()
 
     print('\n\n -- ALL EPISODES FINISHED --')
     print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
