@@ -20,7 +20,7 @@ class Actor:
         """ Picks action greedily """
         optimal_action = actions[0]
         for action in actions:
-            if self.__policy[(state, action)] >= self.__policy[(state, optimal_action)]:
+            if self.__policy[(state, action)] > self.__policy[(state, optimal_action)]:
                 optimal_action = action
         return optimal_action
 
@@ -46,25 +46,25 @@ class Actor:
             if (state, action) not in self.__policy:
                 self.__policy[(state, action)] = 0
 
-    def init_eligs(self, state, actions):
-        """
-        Reset eligibilities in actor: e(s,a) ← 0 ∀s,a
-        :param state:   state
-        :param actions: legal actions
-        :return:
-        """
-        for action in actions:
-            self.init_elig(state, action)
+    # def init_eligs(self, state, actions):
+    #     """
+    #     Reset eligibilities in actor: e(s,a) ← 0 ∀s,a
+    #     :param state:   state
+    #     :param actions: legal actions
+    #     :return:
+    #     """
+    #     for action in actions:
+    #         self.init_elig(state, action)
 
-    def init_elig(self, state, action):
-        """
-        Reset eligibilities in actor: e(s,a) ← 0 ∀s,a
-        :param action:  a
-        :param state:   state
-        :return:
-        """
-        if (state, action) not in self.__elig:
-            self.__elig[(state, action)] = 0
+    # def init_elig(self, state, action):
+    #     """
+    #     Reset eligibilities in actor: e(s,a) ← 0 ∀s,a
+    #     :param action:  a
+    #     :param state:   state
+    #     :return:
+    #     """
+    #     if (state, action) not in self.__elig:
+    #         self.__elig[(state, action)] = 1
 
     def update_policies(self, delta):
         """
@@ -84,7 +84,7 @@ class Actor:
         :return:
         """
         if (state, action) in self.__policy:
-            self.init_elig(state, action)
+            self.update_elig(state, action)
             self.__policy[(state, action)] = self.__policy[(state, action)] + \
                                              self.__learning_rate * delta * \
                                              self.__elig[(state, action)]
@@ -128,3 +128,9 @@ class Actor:
 
     def get_policy(self):
         return self.__policy
+
+    def get_sum_policy(self):
+        return sum(self.__policy.values())
+
+    def get_sum_elig(self):
+        return sum(self.__elig.values())

@@ -70,7 +70,7 @@ class Hanoi(gym.Env):
             reward = 3000
             self.done = True
         elif info["invalid_action"] == True:
-            reward = -100
+            reward = -10000
         else:
             reward = -1
 

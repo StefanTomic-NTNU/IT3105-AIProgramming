@@ -27,13 +27,20 @@ def process_state(state):
 def process_actions(env_, actions):
     if isinstance(actions, Discrete):
         actions_ = [*range(actions.n)]
-        legal_actions = list(map(env_.is_legal_action, actions_))
-        return tuple([d for (d, legal_action) in zip(actions_, legal_actions) if legal_action])
-    return actions
+    else:
+        actions_ = actions
+    legal_actions = list(map(env_.is_legal_action, actions_))
+    return tuple([d for (d, legal_action) in zip(actions_, legal_actions) if legal_action])
 
 
 if __name__ == '__main__':
     scores = []
+    deltas = []
+    sum_eval = []
+    sum_policies = []
+    sum_eligs_critic = []
+    sum_eligs_actor = []
+
 
     config = read_config()
 
@@ -55,27 +62,26 @@ if __name__ == '__main__':
     nr_episodes = config['nr_episodes']
     max_steps = config['max_steps']
 
+    steps = 0
+
     for i_episode in range(nr_episodes):
         sum_reward = 0
         observation = env.reset()
         new_state = copy.copy(observation)
         new_actions = process_actions(env, env.action_space)
 
+        prev_state = copy.copy(new_state)
+        prev_actions = copy.copy(new_actions)
+
         agent.actor.update_chosen_action(new_state, new_actions)
-        chosen_action = agent.get_action()
+        chosen_action = agent.get_action()  # a_init
 
         for t in range(max_steps):
             env.render()
 
-            prev_state = copy.copy(new_state)
-            prev_actions = copy.copy(new_actions)
-
             observation, reward, done, info = env.step(chosen_action)
 
             sum_reward += reward
-
-            agent.update_chosen_action(new_state, new_actions)
-            chosen_action = agent.get_action()
 
             prev_state = process_state(prev_state)
             prev_actions = process_actions(env, prev_actions)
@@ -86,9 +92,23 @@ if __name__ == '__main__':
             # print(f'Prev actions: {prev_actions}')
             # print(f'Chosen action: {chosen_action}')
             # print(f'New state: {new_state}')
-            # print(f'New actions: {new_actions}')
+            # print(f'New actions: {new_actions}\n')
+
+            agent.update_chosen_action(new_state, new_actions)
+            chosen_action = agent.get_action()
 
             agent.learn(prev_state, prev_actions, chosen_action, reward, new_state, new_actions, done)
+
+            # Plotting shit
+            steps += 1
+            deltas.append(copy.copy(agent.critic.get_delta()))
+            sum_eval.append(copy.copy(agent.critic.get_sum_eval()))
+            sum_policies.append(copy.copy(agent.actor.get_sum_policy()))
+            sum_eligs_critic.append(copy.copy(agent.critic.get_sum_elig()))
+            sum_eligs_actor.append(copy.copy(agent.actor.get_sum_elig()))
+
+            prev_state = copy.copy(new_state)
+            prev_actions = copy.copy(new_actions)
 
             if done:
                 print("Episode finished after {} timesteps, with reward {}".format(t + 1, sum_reward))
@@ -109,9 +129,28 @@ if __name__ == '__main__':
     print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
 
     episodes = [*range(nr_episodes)]
+    steps = [*range(steps)]
 
     fig, ax = plt.subplots()  # Create a figure containing a single axes.
-    ax.plot(episodes, scores)  # Plot some data on the axes.
+    ax.plot(episodes, scores, label='Scores')  # Plot some data on the axes.
+    ax.legend()
+    plt.show()
+
+    fig, ax = plt.subplots()  # Create a figure containing a single axes.
+    ax.plot(steps, deltas, label='Deltas')  # Plot some data on the axes.
+    ax.legend()
+    plt.show()
+
+    fig, ax = plt.subplots()  # Create a figure containing a single axes.
+    ax.plot(steps, sum_eval, label='Eval critic')  # Plot some data on the axes.
+    ax.plot(steps, sum_policies, label='Policies actor')  # Plot some data on the axes.
+    ax.legend()
+    plt.show()
+
+    fig, ax = plt.subplots()  # Create a figure containing a single axes.
+    ax.plot(steps, sum_eligs_critic, label='Elig critic')  # Plot some data on the axes.
+    ax.plot(steps, sum_eligs_actor, label='Elig actor')  # Plot some data on the axes.
+    ax.legend()
     plt.show()
 
     env.close()

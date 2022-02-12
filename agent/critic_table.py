@@ -33,7 +33,8 @@ class CriticTable(agent.critic.Critic):
         :param state:   s
         :return:
         """
-        self.update_elig(state)
+        if state not in self.__elig:
+            self.update_elig(state)
         self.init_eval(state)
         self.__eval[state] = self.__eval[state] + \
                              self.__learning_rate * \
@@ -63,8 +64,8 @@ class CriticTable(agent.critic.Critic):
         :param state:
         :return:
         """
-        if state not in self.__elig:
-            self.__elig[state] = 1
+        # if state not in self.__elig:
+        self.__elig[state] = 1
 
     def decay_eligs(self):
         for state in self.__elig:
@@ -85,3 +86,12 @@ class CriticTable(agent.critic.Critic):
 
     def get_eval(self):
         return self.__eval
+
+    def get_delta(self):
+        return self.__td_error
+
+    def get_sum_eval(self):
+        return sum(self.__eval.values())
+
+    def get_sum_elig(self):
+        return sum(self.__elig.values())
