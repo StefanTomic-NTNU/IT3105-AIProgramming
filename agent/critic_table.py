@@ -13,6 +13,11 @@ class CriticTable(agent.critic.Critic):
         self.__td_error = 1                         # delta
         self.__eval = dict()                        # V(s) -> evaluation
         self.__elig = dict()                        # e(s) -> eligibility
+        self.__state_current_episode = []
+        self.rew = []
+        self.disc = []
+        self.prev = []
+        self.new = []
 
     def init_eval(self, state):
         """
@@ -24,7 +29,7 @@ class CriticTable(agent.critic.Critic):
             self.__eval[state] = random.uniform(1, 3)
 
     def update_evals(self):
-        for state in self.__eval:
+        for state in self.__state_current_episode:
             self.update_eval(state)
 
     def update_eval(self, state):
@@ -33,9 +38,8 @@ class CriticTable(agent.critic.Critic):
         :param state:   s
         :return:
         """
-        if state not in self.__elig:
-            self.update_elig(state)
-        self.init_eval(state)
+        # self.update_elig(state)
+        # self.init_eval(state)
         self.__eval[state] = self.__eval[state] + \
                              self.__learning_rate * \
                              self.__td_error * \
@@ -49,11 +53,13 @@ class CriticTable(agent.critic.Critic):
         :param reward:      rewards received from state transition
         :return:
         """
-        self.init_eval(prev_state)
-        self.init_eval(new_state)
+        # self.update_elig(prev_state)
+        # self.update_elig(new_state)
+        # self.init_eval(prev_state)
+        # self.init_eval(new_state)
         self.__td_error = reward + self.__discount_factor * \
-                          self.__eval[prev_state] - \
-                          self.__eval[new_state]
+                          self.__eval[new_state] - \
+                          self.__eval[prev_state]
 
     def get_td_error(self):
         return copy.copy(self.__td_error)
@@ -64,8 +70,9 @@ class CriticTable(agent.critic.Critic):
         :param state:
         :return:
         """
-        # if state not in self.__elig:
         self.__elig[state] = 1
+        if state not in self.__state_current_episode:
+            self.__state_current_episode.append(state)
 
     def decay_eligs(self):
         for state in self.__elig:
@@ -81,6 +88,10 @@ class CriticTable(agent.critic.Critic):
                              self.__trace_decay_fact * \
                              self.__elig[state]
 
+    def new_episode(self):
+        self.__state_current_episode.clear()
+        self.__elig = self.__elig.fromkeys(self.__elig, 0)
+
     def reset_elig(self):
         self.__elig.clear()
 
@@ -95,3 +106,6 @@ class CriticTable(agent.critic.Critic):
 
     def get_sum_elig(self):
         return sum(self.__elig.values())
+
+    def get_size_current_episode(self):
+        return len(self.__state_current_episode)

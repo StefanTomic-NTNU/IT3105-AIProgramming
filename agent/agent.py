@@ -38,10 +38,12 @@ class Agent:
     #     self.actor.init_policy(init_state, init_actions)
 
     def learn(self, prev_state, prev_actions, chosen_action, reward, new_state, new_actions, done):
-        if done:
-            self.new_episode()
+        # print(prev_state)
+        # print(new_state)
 
-        # self.actor.update_chosen_action(new_state, new_actions)
+        self.critic.init_eval(prev_state)
+        self.critic.init_eval(new_state)
+
         self.actor.update_elig(prev_state, chosen_action)
 
         self.critic.update_td_error(prev_state, new_state, reward)
@@ -56,8 +58,8 @@ class Agent:
 
     def new_episode(self):
         self.actor.decay_not_greedy_prob()
-        self.actor.reset_elig()
-        self.critic.reset_elig()
+        self.actor.new_episode()
+        self.critic.new_episode()
 
     def get_action(self):
         return self.actor.get_chosen_action()
