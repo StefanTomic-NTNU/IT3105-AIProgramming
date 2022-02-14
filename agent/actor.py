@@ -19,7 +19,7 @@ class Actor:
 
     def get_optimal_action(self, state, actions):
         """ Picks action greedily """
-        optimal_action = actions[0]
+        optimal_action = random.choice(actions)
         # TODO: Change to just performed saps
         # self.add_saps_to_current_episode(state, actions)
         for action in actions:
@@ -37,16 +37,17 @@ class Actor:
         # TODO: Change to just performed saps
         # self.add_saps_to_current_episode(state, actions)
         self.init_policy(state, actions)
+
         # self.update_elig(state, self.__chosen_action)   # ACTOR: e(s,a) ← 1 (the actor keeps SAP-based eligibilities)
         if random.uniform(0, 1) < 1 - self.__not_greedy_prob:
             self.__chosen_action = self.get_optimal_action(state, actions)
         else:
             self.__chosen_action = random.choice(actions)
 
-    def add_saps_to_current_episode(self, state, actions):
-        for action in actions:
-            if (state, action) not in self.__sap_current_episode:
-                self.__sap_current_episode.append((state, action))
+    # def add_saps_to_current_episode(self, state, actions):
+    #     for action in actions:
+    #         if (state, action) not in self.__sap_current_episode:
+    #             self.__sap_current_episode.append((state, action))
 
     def init_policy(self, state, actions):
         """

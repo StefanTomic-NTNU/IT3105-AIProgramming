@@ -65,13 +65,15 @@ if __name__ == '__main__':
                   )
 
     # env = Gambler(0.5)
-    # env = Hanoi()
     # env = Pole()
     env = CartPoleEnv(pole_length=config['pole_length'],
                       pole_mass=config['pole_mass'],
                       gravity=config['gravity'],
                       timestep=config['timestep']
                       )
+    env = Hanoi()
+
+    display = config['display']
 
     nr_episodes = config['nr_episodes']
     max_steps = config['max_steps']
@@ -98,7 +100,8 @@ if __name__ == '__main__':
         chosen_action = agent.get_action()  # a_init
 
         for t in range(max_steps):  # Repeat for each step of the episode:
-            env.render()
+            if display:
+                env.render()
 
             observation, reward, done, info = env.step(chosen_action)
 
@@ -170,16 +173,16 @@ if __name__ == '__main__':
         ax.legend()
         plt.show()
 
-        # fig, ax = plt.subplots()  # Create a figure containing a single axes.
-        # ax.plot(steps, sum_eligs_critic, label='Elig critic')  # Plot some data on the axes.
-        # ax.plot(steps, sum_eligs_actor, label='Elig actor')  # Plot some data on the axes.
-        # ax.legend()
-        # plt.show()
-        #
-        # fig, ax = plt.subplots()  # Create a figure containing a single axes.
-        # ax.plot(steps, len_curr_ep_crit, label='Current episode critic')  # Plot some data on the axes.
-        # ax.plot(steps, len_curr_ep_actor, label='Current episode actor')  # Plot some data on the axes.
-        # ax.legend()
-        # plt.show()
+        fig, ax = plt.subplots()  # Create a figure containing a single axes.
+        ax.plot(steps, sum_eligs_critic, label='Elig critic')  # Plot some data on the axes.
+        ax.plot(steps, sum_eligs_actor, label='Elig actor')  # Plot some data on the axes.
+        ax.legend()
+        plt.show()
+
+        fig, ax = plt.subplots()  # Create a figure containing a single axes.
+        ax.plot(steps, len_curr_ep_crit, label='Current episode critic')  # Plot some data on the axes.
+        ax.plot(steps, len_curr_ep_actor, label='Current episode actor')  # Plot some data on the axes.
+        ax.legend()
+        plt.show()
 
     env.close()
