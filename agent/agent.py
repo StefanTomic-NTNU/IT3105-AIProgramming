@@ -46,7 +46,7 @@ class Agent:
 
         self.actor.update_elig(prev_state, chosen_action)
 
-        self.critic.update_td_error(prev_state, new_state, reward)
+        self.critic.update_td_error(prev_state, new_state, reward, done)
         self.critic.update_elig(prev_state)
 
         # ∀(s,a) ∈ current episode:

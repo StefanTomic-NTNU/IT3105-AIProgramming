@@ -3,19 +3,20 @@ import random
 
 
 class Actor:
-    def __init__(self, learning_rate, discount_factor, trace_decay_fact, init_not_greedy_prob, not_greedy_prob_decay_fact):
-        self.__learning_rate = learning_rate            # alpha
-        self.__discount_factor = discount_factor        # gamma
-        self.__trace_decay_fact = trace_decay_fact      # lambda
-        self.__not_greedy_prob = init_not_greedy_prob   # epsilon
+    def __init__(self, learning_rate, discount_factor, trace_decay_fact, init_not_greedy_prob,
+                 not_greedy_prob_decay_fact):
+        self.__learning_rate = learning_rate  # alpha
+        self.__discount_factor = discount_factor  # gamma
+        self.__trace_decay_fact = trace_decay_fact  # lambda
+        self.__not_greedy_prob = init_not_greedy_prob  # epsilon
         self.__not_greedy_prob_decay_fact = not_greedy_prob_decay_fact
-        self.__policy = dict()                          # Π(s, a) -> value
-        self.__elig = dict()                            # e(s, a) -> eligibility
+        self.__policy = dict()  # Π(s, a) -> value
+        self.__elig = dict()  # e(s, a) -> eligibility
         self.__sap_current_episode = []
         self.__chosen_action = None
 
     def get_chosen_action(self):
-        return copy.copy(self.__chosen_action)
+        return self.__chosen_action
 
     def get_optimal_action(self, state, actions):
         """ Picks action greedily """
@@ -57,6 +58,7 @@ class Actor:
         for action in actions:
             if (state, action) not in self.__policy:
                 self.__policy[(state, action)] = 0
+                # self.update_elig(state, action)
 
     def update_policies(self, delta):
         """
@@ -77,9 +79,8 @@ class Actor:
         """
         if (state, action) not in self.__policy:
             self.__policy[(state, action)] = 0
-        self.__policy[(state, action)] = self.__policy[(state, action)] + \
-                                         self.__learning_rate * delta * \
-                                         self.__elig[(state, action)]
+        # print(type(delta))
+        self.__policy[(state, action)] = self.__policy[(state, action)] + self.__learning_rate * delta * self.__elig[(state, action)]
 
     def update_elig(self, state, action):
         """
@@ -88,6 +89,8 @@ class Actor:
         :param action:
         :return:
         """
+        if (state, action) not in self.__policy:
+            self.__policy[(state, action)] = 0
         self.__elig[(state, action)] = 1
         if (state, action) not in self.__sap_current_episode:
             self.__sap_current_episode.append((state, action))
@@ -107,9 +110,7 @@ class Actor:
         :param action:  action
         :return:
         """
-        self.__elig[(state, action)] = self.__discount_factor * \
-                                       self.__trace_decay_fact * \
-                                       self.__elig[(state, action)]
+        self.__elig[(state, action)] = self.__discount_factor * self.__trace_decay_fact * self.__elig[(state, action)]
 
     def new_episode(self):
         self.__sap_current_episode.clear()
@@ -132,3 +133,6 @@ class Actor:
 
     def get_size_current_episode(self):
         return len(self.__sap_current_episode)
+
+    def set_not_greedy_prob(self, prob):
+        self.__not_greedy_prob = prob

@@ -17,6 +17,7 @@ from agent.agent import Agent
 
 import gym
 
+
 def read_config():
     with open('config.json', 'r') as f:
         config_ = json.load(f)
@@ -25,9 +26,23 @@ def read_config():
 
 def process_state(state):
     if isinstance(state, np.ndarray):
-        state_ = tuple(map(lambda x: round(x, ndigits=2), state))
+        # state_ = tuple(map(lambda x: round(x, ndigits=1), state))
+        state[0] = bin_state(state[0], -2.4, 2.4, 10)
+        state[1] = bin_state(state[1], -3, 3, 8)
+        state[2] = bin_state(state[2], -0.418, 0.418, 15)
+        state[3] = bin_state(state[3], -3, 3, 8)
+        state_ = tuple(state)
         return state_
     return state
+
+
+def bin_state(val, min_, max_, nr_bins):
+    bin_: int = 0
+    if val > max_:
+        bin_ = nr_bins
+    else:
+        bin_ = int(round((val - min_) / (max_ - min_) * nr_bins))
+    return bin_
 
 
 def process_actions(env_, actions):
@@ -71,7 +86,7 @@ if __name__ == '__main__':
                       gravity=config['gravity'],
                       timestep=config['timestep']
                       )
-    env = Hanoi()
+    # env = Hanoi()
 
     display = config['display']
 
@@ -81,6 +96,9 @@ if __name__ == '__main__':
     steps = 0
 
     for i_episode in range(nr_episodes):    # Repeat for each episode:
+        if i_episode == 998:
+            agent.actor.set_not_greedy_prob(0)
+
         sum_reward = 0
 
         agent.new_episode()     # Reset eligibilities in actor and critic: e(s,a) ← 0: e(s) ← 0 ∀s,a
@@ -104,6 +122,9 @@ if __name__ == '__main__':
                 env.render()
 
             observation, reward, done, info = env.step(chosen_action)
+
+            if done:
+                print('done')
 
             sum_reward += reward
 
@@ -141,15 +162,17 @@ if __name__ == '__main__':
 
         scores.append(sum_reward)
         print(f'Episode: {i_episode}')
-        print(f'Final state: {new_state}')
-        print(f'Final score: {sum_reward}')
-        print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
-        # print(f'Policy size: {len(agent.actor.get_policy())}')
-        # print(f'Eval size: {len(agent.critic.get_eval())}')
-        print('\n\n')
+        # print(f'Final state: {new_state}')
+        # print(f'Final score: {sum_reward}')
+        # print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
+        print(f'Policy size: {len(agent.actor.get_policy())}')
+        print(f'Eval size: {len(agent.critic.get_eval())}')
+        # print('\n\n')
 
     print('\n\n -- ALL EPISODES FINISHED --')
     print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
+    # print(agent.critic.get_eval())
+    # print(agent.actor.get_policy())
 
     episodes = [*range(nr_episodes)]
     steps = [*range(steps)]
@@ -173,16 +196,16 @@ if __name__ == '__main__':
         ax.legend()
         plt.show()
 
-        fig, ax = plt.subplots()  # Create a figure containing a single axes.
-        ax.plot(steps, sum_eligs_critic, label='Elig critic')  # Plot some data on the axes.
-        ax.plot(steps, sum_eligs_actor, label='Elig actor')  # Plot some data on the axes.
-        ax.legend()
-        plt.show()
+        # fig, ax = plt.subplots()  # Create a figure containing a single axes.
+        # ax.plot(steps, sum_eligs_critic, label='Elig critic')  # Plot some data on the axes.
+        # ax.plot(steps, sum_eligs_actor, label='Elig actor')  # Plot some data on the axes.
+        # ax.legend()
+        # plt.show()
 
-        fig, ax = plt.subplots()  # Create a figure containing a single axes.
-        ax.plot(steps, len_curr_ep_crit, label='Current episode critic')  # Plot some data on the axes.
-        ax.plot(steps, len_curr_ep_actor, label='Current episode actor')  # Plot some data on the axes.
-        ax.legend()
-        plt.show()
+        # fig, ax = plt.subplots()  # Create a figure containing a single axes.
+        # ax.plot(steps, len_curr_ep_crit, label='Current episode critic')  # Plot some data on the axes.
+        # ax.plot(steps, len_curr_ep_actor, label='Current episode actor')  # Plot some data on the axes.
+        # ax.legend()
+        # plt.show()
 
     env.close()

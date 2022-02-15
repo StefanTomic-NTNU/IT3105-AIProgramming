@@ -26,7 +26,7 @@ class CriticTable(agent.critic.Critic):
         :return:
         """
         if state not in self.__eval:
-            self.__eval[state] = random.uniform(1, 3)
+            self.__eval[state] = random.uniform(-1, 0)
 
     def update_evals(self):
         for state in self.__state_current_episode:
@@ -45,11 +45,11 @@ class CriticTable(agent.critic.Critic):
                              self.__td_error * \
                              self.__elig[state]
 
-    def update_td_error(self, prev_state, new_state, reward):
+    def update_td_error(self, prev_state, new_state, reward, done):
         """
         δ ← r + γV(s') − V(s)
-        :param prev_state:  s'
-        :param new_state:   s
+        :param prev_state:  s
+        :param new_state:   s'
         :param reward:      rewards received from state transition
         :return:
         """
@@ -57,12 +57,13 @@ class CriticTable(agent.critic.Critic):
         # self.update_elig(new_state)
         # self.init_eval(prev_state)
         # self.init_eval(new_state)
-        self.__td_error = reward + self.__discount_factor * \
-                          self.__eval[new_state] - \
-                          self.__eval[prev_state]
+        self.__td_error = reward + self.__discount_factor * self.__eval[new_state] - self.__eval[prev_state]
 
     def get_td_error(self):
-        return copy.copy(self.__td_error)
+        return self.__td_error
+
+    def get_delta(self):
+        return self.__td_error
 
     def update_elig(self, state):
         """
@@ -84,9 +85,7 @@ class CriticTable(agent.critic.Critic):
         :param state:   s
         :return:
         """
-        self.__elig[state] = self.__discount_factor * \
-                             self.__trace_decay_fact * \
-                             self.__elig[state]
+        self.__elig[state] = self.__discount_factor * self.__trace_decay_fact * self.__elig[state]
 
     def new_episode(self):
         self.__state_current_episode.clear()
@@ -97,9 +96,6 @@ class CriticTable(agent.critic.Critic):
 
     def get_eval(self):
         return self.__eval
-
-    def get_delta(self):
-        return self.__td_error
 
     def get_sum_eval(self):
         return sum(self.__eval.values())
