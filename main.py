@@ -1,6 +1,8 @@
 import copy
 import json
 import random
+import statistics
+
 import numpy as np
 
 import gym
@@ -27,17 +29,17 @@ def read_config():
 def process_state(state):
     if isinstance(state, np.ndarray):
         # state_ = tuple(map(lambda x: round(x, ndigits=1), state))
-        state[0] = bin_state(state[0], -2.4, 2.4, 10)
-        state[1] = bin_state(state[1], -3, 3, 8)
-        state[2] = bin_state(state[2], -0.418, 0.418, 15)
-        state[3] = bin_state(state[3], -3, 3, 8)
+        state[0] = bin_state(state[0], -2.4, 2.4, 6)        # Pos
+        state[1] = bin_state(state[1], -2, 2, 6)            # Cart velocity
+        state[2] = bin_state(state[2], -0.42, 0.42, 15)     # Angle
+        state[3] = bin_state(state[3], -1, 1, 8)            # Pole velocity
         state_ = tuple(state)
         return state_
     return state
 
 
 def bin_state(val, min_, max_, nr_bins):
-    bin_: int = 0
+    bin_ = 0
     if val > max_:
         bin_ = nr_bins
     else:
@@ -65,6 +67,11 @@ if __name__ == '__main__':
     sum_eligs_actor = []
     len_curr_ep_crit = []
     len_curr_ep_actor = []
+    step_list = []
+    actions = []
+    wagers = []
+    for i in range(100):
+        wagers.append([])
 
     config = read_config()
 
@@ -79,14 +86,14 @@ if __name__ == '__main__':
                   config['not_greedy_prob_decay_fact']
                   )
 
-    # env = Gambler(0.5)
     # env = Pole()
     env = CartPoleEnv(pole_length=config['pole_length'],
                       pole_mass=config['pole_mass'],
                       gravity=config['gravity'],
                       timestep=config['timestep']
                       )
-    # env = Hanoi()
+    env = Hanoi()
+    env = Gambler(0.5)
 
     display = config['display']
 
@@ -95,15 +102,19 @@ if __name__ == '__main__':
 
     steps = 0
 
+    all_state_history = []
     for i_episode in range(nr_episodes):    # Repeat for each episode:
-        if i_episode == 998:
-            agent.actor.set_not_greedy_prob(0)
+        state_history = []
 
         sum_reward = 0
 
         agent.new_episode()     # Reset eligibilities in actor and critic: e(s,a) ← 0: e(s) ← 0 ∀s,a
 
         observation = env.reset()
+
+        if i_episode == nr_episodes-1:
+            agent.actor.set_not_greedy_prob(0)
+            env.render()
 
         # Initialize: s ← s_init; a ← Π(s_init)
         # new_state = copy.copy(observation)
@@ -116,19 +127,20 @@ if __name__ == '__main__':
 
         agent.actor.update_chosen_action(prev_state, prev_actions)
         chosen_action = agent.get_action()  # a_init
+        steps_episode = 0
 
+        state_history.append(prev_state)
         for t in range(max_steps):  # Repeat for each step of the episode:
+
             if display:
                 env.render()
 
             observation, reward, done, info = env.step(chosen_action)
 
-            if done:
-                print('done')
-
             sum_reward += reward
 
             new_state = process_state(observation)
+            state_history.append(new_state)
             # print(new_state)
             new_actions = process_actions(env, env.action_space)
 
@@ -138,13 +150,9 @@ if __name__ == '__main__':
             # print(f'New state: {new_state}')
             # print(f'New actions: {new_actions}\n')
 
-            agent.update_chosen_action(new_state, new_actions)
-            chosen_action = agent.get_action()
-
-            agent.learn(prev_state, prev_actions, chosen_action, reward, new_state, new_actions, done)
-
             # Plotting shit
             steps += 1
+            steps_episode += 1
             deltas.append(copy.copy(agent.critic.get_delta()))
             sum_eval.append(copy.copy(agent.critic.get_sum_eval()))
             sum_policies.append(copy.copy(agent.actor.get_sum_policy()))
@@ -152,33 +160,51 @@ if __name__ == '__main__':
             sum_eligs_actor.append(copy.copy(agent.actor.get_sum_elig()))
             len_curr_ep_crit.append(copy.copy(agent.critic.get_size_current_episode()))
             len_curr_ep_actor.append(copy.copy(agent.actor.get_size_current_episode()))
-
-            prev_state = copy.copy(new_state)
-            prev_actions = copy.copy(new_actions)
+            actions.append(chosen_action)
+            if isinstance(env, Gambler):
+                wagers[prev_state].append(chosen_action)
 
             if done:
                 print("Episode finished after {} timesteps, with reward {}".format(t + 1, sum_reward))
                 break
 
+            agent.update_chosen_action(new_state, new_actions)
+            chosen_action = agent.get_action()
+
+            agent.learn(prev_state, prev_actions, chosen_action, reward, new_state, new_actions, done)
+
+            prev_state = copy.copy(new_state)
+            prev_actions = copy.copy(new_actions)
+
         scores.append(sum_reward)
+        step_list.append(steps_episode)
         print(f'Episode: {i_episode}')
+        # print(state_history)
         # print(f'Final state: {new_state}')
         # print(f'Final score: {sum_reward}')
         # print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
-        print(f'Policy size: {len(agent.actor.get_policy())}')
-        print(f'Eval size: {len(agent.critic.get_eval())}')
+        # print(f'Policy size: {len(agent.actor.get_policy())}')
+        # print(f'Eval size: {len(agent.critic.get_eval())}')
+
+        all_state_history.append(copy.copy(state_history))
+        state_history.clear()
         # print('\n\n')
 
     print('\n\n -- ALL EPISODES FINISHED --')
     print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
-    # print(agent.critic.get_eval())
-    # print(agent.actor.get_policy())
+    print(agent.critic.get_eval())
+    print(agent.actor.get_policy())
 
     episodes = [*range(nr_episodes)]
     steps = [*range(steps)]
 
     fig, ax = plt.subplots()  # Create a figure containing a single axes.
     ax.plot(episodes, scores, label='Scores')  # Plot some data on the axes.
+    ax.legend()
+    plt.show()
+
+    fig, ax = plt.subplots()  # Create a figure containing a single axes.
+    ax.plot(episodes, step_list, label='Steps')  # Plot some data on the axes.
     ax.legend()
     plt.show()
 
@@ -192,7 +218,7 @@ if __name__ == '__main__':
         avg_pol = np.array(sum_policies) / len(agent.actor.get_policy().keys())
         fig, ax = plt.subplots()  # Create a figure containing a single axes.
         ax.plot(steps, avg_eval, label='Avg eval critic')  # Plot some data on the axes.
-        ax.plot(steps, avg_pol, label='Policies actor')  # Plot some data on the axes.
+        ax.plot(steps, avg_pol, label='Avg Policies actor')  # Plot some data on the axes.
         ax.legend()
         plt.show()
 
@@ -207,5 +233,36 @@ if __name__ == '__main__':
         # ax.plot(steps, len_curr_ep_actor, label='Current episode actor')  # Plot some data on the axes.
         # ax.legend()
         # plt.show()
+
+        # fig, ax = plt.subplots()  # Create a figure containing a single axes.
+        # ax.plot(steps, actions, label='Actions taken')  # Plot some data on the axes.
+        # ax.legend()
+        # plt.show()
+
+        if isinstance(env, Gambler):
+            # print(wagers)
+            # wagers_avg = []
+            # for i in range(1, len(wagers)):
+            #     wagers_avg.append(statistics.fmean(wagers[i]))
+            #
+            # fig, ax = plt.subplots()  # Create a figure containing a single axes.
+            # ax.plot(episodes, wagers_avg, label='Avg bet')  # Plot some data on the axes.
+            # ax.legend()
+            # plt.show()
+
+            # Greedy strat:
+            agent.actor.set_not_greedy_prob(0)
+            greedy_actions = []
+            states = range(1, 100)
+            for i in range(1, 100):
+                env.state = i
+                env.update_action_space()
+                actions = env.action_space
+                greedy_actions.append(agent.actor.get_optimal_action(i, process_actions(env, actions)))
+
+            fig, ax = plt.subplots()  # Create a figure containing a single axes.
+            ax.plot(states, greedy_actions, label='Greedy actions')  # Plot some data on the axes.
+            ax.legend()
+            plt.show()
 
     env.close()

@@ -14,7 +14,7 @@ class Hanoi(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self):
-        self.num_disks = 4
+        self.num_disks = 2
         self.env_noise = 0
         self.action_space = spaces.Discrete(6)
         self.observation_space = spaces.Tuple(self.num_disks*(spaces.Discrete(3),))
@@ -68,12 +68,12 @@ class Hanoi(gym.Env):
             info["invalid_action"] = True
 
         if self.current_state == self.goal_state:
-            reward = 100
+            reward = 1
             self.done = True
         elif info["invalid_action"] == True:
             reward = -1000
         else:
-            reward = 0
+            reward = -1
 
         return self.current_state, reward, self.done, info
 
@@ -115,6 +115,11 @@ class Hanoi(gym.Env):
         return self.current_state
 
     def render(self, mode='human', close=False):
+        rows = []
+        # for i in range(self.num_disks):
+        #     rows.append([])
+        # for j in range(self.num_disks):
+        #     rows[j][self.current_state[j]] = '*'
         return
 
     def set_env_parameters(self, num_disks=4, env_noise=0, verbose=True):

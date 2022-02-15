@@ -57,6 +57,9 @@ class CriticTable(agent.critic.Critic):
         # self.update_elig(new_state)
         # self.init_eval(prev_state)
         # self.init_eval(new_state)
+        # if done:
+        #     self.update_elig(new_state)
+        #     print('done')
         self.__td_error = reward + self.__discount_factor * self.__eval[new_state] - self.__eval[prev_state]
 
     def get_td_error(self):
