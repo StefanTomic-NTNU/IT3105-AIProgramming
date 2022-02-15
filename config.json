@@ -1,21 +1,26 @@
 {
-  "nr_episodes":                2000,
-  "max_steps":                  200,
+  "nr_episodes":                200,
+  "max_steps":                  1000,
   "critic_type":                "table",
   "nn_dims":                    [15, 20, 30, 5, 1],
   "actor_learning_rate":        0.2,
   "critic_learning_rate":       0.1,
   "actor_elig_decay_rate":      0.50,
   "critic_elig_decay_rate":     0.90,
-  "actor_discount_fact":        0.95,
-  "critic_discount_fact":       0.95,
+  "actor_discount_fact":        0.91,
+  "critic_discount_fact":       0.91,
   "init_not_greedy_prob":       0.5,
-  "not_greedy_prob_decay_fact": 0.999,
+  "not_greedy_prob_decay_fact": 0.992,
   "display":                    0,
   "frame_delay":                1,
 
   "pole_length":                1.0,
   "pole_mass":                  0.1,
   "gravity":                    9.8,
-  "timestep":                   0.02
+  "timestep":                   0.02,
+
+  "nr_pegs":                    3,
+  "nr_discs":                   2,
+
+  "win_prob":                   0.50
 }

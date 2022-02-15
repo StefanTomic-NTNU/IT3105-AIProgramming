@@ -92,8 +92,8 @@ if __name__ == '__main__':
                       gravity=config['gravity'],
                       timestep=config['timestep']
                       )
-    env = Hanoi()
-    env = Gambler(0.5)
+    env = Gambler(win_prob=config['win_prob'])
+    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
 
     display = config['display']
 
@@ -179,12 +179,12 @@ if __name__ == '__main__':
         scores.append(sum_reward)
         step_list.append(steps_episode)
         print(f'Episode: {i_episode}')
-        # print(state_history)
-        # print(f'Final state: {new_state}')
-        # print(f'Final score: {sum_reward}')
-        # print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
-        # print(f'Policy size: {len(agent.actor.get_policy())}')
-        # print(f'Eval size: {len(agent.critic.get_eval())}')
+        print(state_history)
+        print(f'Final state: {new_state}')
+        print(f'Final score: {sum_reward}')
+        print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
+        print(f'Policy size: {len(agent.actor.get_policy())}')
+        print(f'Eval size: {len(agent.critic.get_eval())}')
 
         all_state_history.append(copy.copy(state_history))
         state_history.clear()

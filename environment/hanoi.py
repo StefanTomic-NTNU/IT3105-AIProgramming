@@ -13,22 +13,23 @@ import numpy as np
 class Hanoi(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self):
-        self.num_disks = 2
-        self.env_noise = 0
-        self.action_space = spaces.Discrete(6)
-        self.observation_space = spaces.Tuple(self.num_disks*(spaces.Discrete(3),))
+    def __init__(self, nr_pegs=3, nr_discs=2):
+        self.num_disks = nr_discs
+        self.num_pegs = nr_pegs
+
+        self.action_space = spaces.Discrete(20)
+        self.observation_space = spaces.Tuple(self.num_disks * (spaces.Discrete(3),))
 
         self.current_state = None
-        self.goal_state = self.num_disks*(2,)
+        self.goal_state = self.num_disks * (2,)
 
         self.done = None
-        self.ACTION_LOOKUP = {0 : "(0,1) - top disk of pole 0 to top of pole 1 ",
-                              1 : "(0,2) - top disk of pole 0 to top of pole 2 ",
-                              2 : "(1,0) - top disk of pole 1 to top of pole 0",
-                              3 : "(1,2) - top disk of pole 1 to top of pole 2",
-                              4 : "(2,0) - top disk of pole 2 to top of pole 0",
-                              5 : "(2,1) - top disk of pole 2 to top of pole 1"}
+        self.ACTION_LOOKUP = {0: "(0,1) - top disk of pole 0 to top of pole 1 ",
+                              1: "(0,2) - top disk of pole 0 to top of pole 2 ",
+                              2: "(1,0) - top disk of pole 1 to top of pole 0",
+                              3: "(1,2) - top disk of pole 1 to top of pole 2",
+                              4: "(2,0) - top disk of pole 2 to top of pole 0",
+                              5: "(2,1) - top disk of pole 2 to top of pole 1"}
 
     def step(self, action):
         """
@@ -50,12 +51,6 @@ class Hanoi(gym.Env):
 
         info = {"transition_failure": False,
                 "invalid_action": False}
-
-        if self.env_noise > 0:
-            r_num = random.random()
-            if r_num <= self.env_noise:
-                action = random.randint(0, self.action_space.n-1)
-                info["transition_failure"] = True
 
         move = action_to_move[action]
 
@@ -101,6 +96,9 @@ class Hanoi(gym.Env):
             * discs_to is empty (no disc of peg) set to true
             * Smallest disc on target pole larger than smallest on prev
         """
+        if move[0] >= self.num_pegs or move[1] >= self.num_pegs:
+            return False
+
         disks_from = self.disks_on_peg(move[0])
         disks_to = self.disks_on_peg(move[1])
 
@@ -125,62 +123,20 @@ class Hanoi(gym.Env):
     def set_env_parameters(self, num_disks=4, env_noise=0, verbose=True):
         self.num_disks = num_disks
         self.env_noise = env_noise
-        self.observation_space = spaces.Tuple(self.num_disks*(spaces.Discrete(3),))
-        self.goal_state = self.num_disks*(2,)
+        self.observation_space = spaces.Tuple(self.num_disks * (spaces.Discrete(self.num_pegs),))
+        self.goal_state = self.num_disks * (self.num_pegs,)
 
         if verbose:
             print("Hanoi Environment Parameters have been set to:")
             print("\t Number of Disks: {}".format(self.num_disks))
             print("\t Transition Failure Probability: {}".format(self.env_noise))
 
-    def get_movability_map(self, fill=False):
-        # Initialize movability map
-        mov_map = np.zeros(self.num_disks*(3, ) + (6,))
 
-        if fill:
-            # Get list of all states as tuples
-            id_list = self.num_disks*[0] + self.num_disks*[1] + self.num_disks*[2]
-            states = list(itertools.permutations(id_list, self.num_disks))
-
-            for state in states:
-                for action in range(6):
-                    move = action_to_move[action]
-                    disks_from = []
-                    disks_to = []
-                    for d in range(self.num_disks):
-                        if state[d] == move[0]: disks_from.append(d)
-                        elif state[d] == move[1]: disks_to.append(d)
-
-                    if disks_from: valid = (min(disks_to) > min(disks_from)) if disks_to else True
-                    else: valid = False
-
-                    if not valid: mov_map[state][action] = -np.inf
-
-                    move_from = [m[0] for m in action_to_move]
-                    move_to = [m[1] for m in action_to_move]
-
-        # # Try to get rid of action loop - vectorize...
-        # for state in states:
-        #     s = np.array(state)
-        #     disks_from = []
-        #     disks_to = []
-        #
-        #     for d in range(self.num_disks):
-        #         a_from = [a for a, v in enumerate(move_from) if v == s[d]]
-        #         a_to = [a for a, v in enumerate(move_to) if v == s[d]]
-        #
-        #         if disks_from:
-        #             valid = (min(disks_to) > min(disks_from)) if disks_to else True
-        #         else:
-        #             valid = False
-        #
-        #         if not valid:
-        #             mov_map[state][action] = -np.inf
-        return mov_map
-
-
-action_to_move = [(0, 1), (0, 2), (1, 0),
-                  (1, 2), (2, 0), (2, 1)]
+action_to_move = [(0, 1), (0, 2), (0, 3), (0, 4),
+                  (1, 0), (1, 2), (1, 3), (1, 4),
+                  (2, 0), (2, 1), (2, 3), (2, 4),
+                  (3, 0), (3, 1), (3, 2), (3, 4),
+                  (4, 0), (4, 1), (4, 2), (4, 3)]
 
 # action_to_move = {0: (0, 1), 1: (0, 2), 2: (1, 0),
 #                   3: (1, 2), 4: (2, 0), 5: (2, 1)}

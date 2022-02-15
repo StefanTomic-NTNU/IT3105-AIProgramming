@@ -4,7 +4,7 @@ import environment.environment
 
 
 class Gambler(environment.environment.Environment):
-    def __init__(self, win_prob):
+    def __init__(self, win_prob=0.5):
         super().__init__()
         self.__win_prob = win_prob  # Chance of winning a coin toss
 
