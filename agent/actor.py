@@ -24,7 +24,7 @@ class Actor:
         # TODO: Change to just performed saps
         # self.add_saps_to_current_episode(state, actions)
         for action in actions:
-            if self.__policy[(state, action)] > self.__policy[(state, optimal_action)]:
+            if self.__policy[(state, action)] < self.__policy[(state, optimal_action)]:
                 optimal_action = action
         return optimal_action
 
