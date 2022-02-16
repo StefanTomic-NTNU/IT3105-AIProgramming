@@ -7,10 +7,9 @@ from agent.neural_network import NeuralNetwork
 
 
 class CriticNN():
-    def __init__(self, alpha=0.0003, gamma=0.99, n_actions=2):
+    def __init__(self, alpha=0.0003, gamma=0.99):
         self.gamma = gamma
-        self.n_actions = n_actions
-        self.neural_network = NeuralNetwork(n_actions)
+        self.neural_network = NeuralNetwork()
         self.neural_network.compile(optimizer=adam_v2.Adam(learning_rate=alpha))
         self.__td_error = 0
 
@@ -29,11 +28,11 @@ class CriticNN():
             prev_state_value = tf.squeeze(prev_state_value)
             new_state_value = tf.squeeze(new_state_value)
 
-            print(reward)
-            print(self.gamma)
-            print(new_state_value)
-            print(1 - int(done))
-            print(prev_state_value)
+            # print(reward)
+            # print(self.gamma)
+            # print(new_state_value)
+            # print(1 - int(done))
+            # print(prev_state_value)
             delta = reward + self.gamma * new_state_value * (1 - int(done)) - prev_state_value
             loss = delta**2
 
@@ -41,10 +40,10 @@ class CriticNN():
             self.neural_network.optimizer.apply_gradients(zip(gradient, self.neural_network.trainable_variables))
 
             target = reward + self.gamma * self.stateValue(new_state)
-            self.__td_error = target - self.stateValue(prev_state)
+            self.__td_error = tf.keras.backend.eval(target - self.stateValue(prev_state))[0]
 
     def stateValue(self, state):
-        state = [tf.strings.to_number(bin, out_type=tf.dtypes.int32) for bin in state]  # convert to array
+        # state = [tf.float32.to_number(bin, out_type=tf.dtypes.int32) for bin in state]  # convert to array
         state = tf.convert_to_tensor(np.expand_dims(state, axis=0))
         return self.neural_network(state).numpy()[0][0]
 
@@ -64,7 +63,7 @@ class CriticNN():
         pass
 
     def get_td_error(self):
-        pass
+        return self.__td_error
 
     def new_episode(self):
         pass

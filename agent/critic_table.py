@@ -10,7 +10,7 @@ class CriticTable(agent.critic.Critic):
         self.__learning_rate = learning_rate        # alpha
         self.__discount_factor = discount_factor    # gamma
         self.__trace_decay_fact = trace_decay_fact  # lambda
-        self.__td_error = 1                         # delta
+        self.__td_error = 0                         # delta
         self.__eval = dict()                        # V(s) -> evaluation
         self.__elig = dict()                        # e(s) -> eligibility
         self.__state_current_episode = []
