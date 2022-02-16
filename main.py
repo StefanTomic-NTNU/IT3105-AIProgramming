@@ -100,7 +100,7 @@ if __name__ == '__main__':
 
     display = config['display']
 
-    nr_episodes = config['nr_episodes']
+    nr_episodes = config['nr_episodes'] + 1
     max_steps = config['max_steps']
 
     steps = 0
@@ -114,10 +114,6 @@ if __name__ == '__main__':
         agent.new_episode()     # Reset eligibilities in actor and critic: e(s,a) ← 0: e(s) ← 0 ∀s,a
 
         observation = env.reset()
-
-        if i_episode == nr_episodes-1:
-            agent.actor.set_not_greedy_prob(0)
-            env.render()
 
         # Initialize: s ← s_init; a ← Π(s_init)
         # new_state = copy.copy(observation)
@@ -135,7 +131,8 @@ if __name__ == '__main__':
         state_history.append(prev_state)
         for t in range(max_steps):  # Repeat for each step of the episode:
 
-            if display:
+            if display and i_episode == nr_episodes - 1:
+                agent.actor.set_not_greedy_prob(0)
                 env.render()
 
             observation, reward, done, info = env.step(chosen_action)
@@ -166,8 +163,8 @@ if __name__ == '__main__':
             actions.append(chosen_action)
             if isinstance(env, Gambler):
                 wagers[prev_state].append(chosen_action)
-            if isinstance(env, CartPoleEnv) and i_episode == nr_episodes-1:
-                angles.append(new_state[3])
+            if isinstance(env, CartPoleEnv) and i_episode == nr_episodes - 1:
+                angles.append(observation[3])
                 greedy_steps.append(t)
 
             if done:
@@ -189,8 +186,8 @@ if __name__ == '__main__':
         print(f'Final state: {new_state}')
         # print(f'Final score: {sum_reward}')
         print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
-        print(f'Policy size: {len(agent.actor.get_policy())}')
-        print(f'Eval size: {len(agent.critic.get_eval())}')
+        # print(f'Policy size: {len(agent.actor.get_policy())}')
+        # print(f'Eval size: {len(agent.critic.get_eval())}')
 
         all_state_history.append(copy.copy(state_history))
         len_eval.append(len(agent.critic.get_eval()))
