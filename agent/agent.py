@@ -16,7 +16,9 @@ class Agent:
                  actor_discount_fact,
                  critic_discount_fact,
                  init_not_greedy_prob,
-                 not_greedy_prob_decay_fact):
+                 not_greedy_prob_decay_fact,
+                 layers,
+                 state_shape):
         self.actor = Actor(actor_learning_rate,
                            actor_discount_fact,
                            actor_elig_decay_rate,
@@ -29,8 +31,8 @@ class Agent:
                                       critic_discount_fact,
                                       critic_elig_decay_rate)
         elif critic_type == 'nn':
-            self.critic = ANNCritic
-
+            self.critic = ANNCritic(layers, state_shape, critic_learning_rate, critic_discount_fact)
+            # self.critic = CriticNN(alpha=critic_learning_rate, gamma=critic_discount_fact, n_actions=2)
         else:
             raise Exception('Critic must be of type "table" or "nn"')
 

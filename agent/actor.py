@@ -81,7 +81,7 @@ class Actor:
         if (state, action) not in self.__policy:
             self.__policy[(state, action)] = 0
         # print(type(delta))
-        self.__policy[(state, action)] = self.__policy[(state, action)] + self.__learning_rate * delta * self.__elig[(state, action)]
+        self.__policy[(state, action)] -= self.__learning_rate * delta * self.__elig[(state, action)]
 
     def update_elig(self, state, action):
         """

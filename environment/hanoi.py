@@ -71,7 +71,7 @@ class Hanoi(gym.Env):
             reward = -1000
             warnings.warn('Invalid action performed')
         else:
-            reward = 1
+            reward = -1
 
         return self.current_state, reward, self.done, info
 

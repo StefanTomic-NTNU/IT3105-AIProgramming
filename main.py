@@ -25,16 +25,20 @@ def read_config():
         config_ = json.load(f)
     return config_
 
+pos_bins = 7
+cart_vel_bins = 7
+angle_bins = 13
+pole_vel_bins = 8
 
 def process_state(state, done):
     if isinstance(state, np.ndarray):
         if done:
-            return None
+            return (100, 100, 100, 100)
         # state_ = tuple(map(lambda x: round(x, ndigits=1), state))
-        state[0] = bin_state(state[0], -2.4, 2.4, 7)        # Pos
-        state[1] = bin_state(state[1], -2, 2, 7)            # Cart velocity
-        state[2] = bin_state(state[2], -0.21, 0.21, 13)     # Angle
-        state[3] = bin_state(state[3], -2, 2, 8)            # Pole velocity
+        state[0] = bin_state(state[0], -2.4, 2.4, pos_bins)        # Pos
+        state[1] = bin_state(state[1], -2, 2, cart_vel_bins)            # Cart velocity
+        state[2] = bin_state(state[2], -0.21, 0.21, angle_bins)     # Angle
+        state[3] = bin_state(state[3], -2, 2, pole_vel_bins)            # Pole velocity
         state_ = tuple(state)
         return state_
     return state
@@ -80,17 +84,6 @@ if __name__ == '__main__':
 
     config = read_config()
 
-    agent = Agent(config['critic_type'],
-                  config['actor_learning_rate'],
-                  config['critic_learning_rate'],
-                  config['actor_elig_decay_rate'],
-                  config['critic_elig_decay_rate'],
-                  config['actor_discount_fact'],
-                  config['critic_discount_fact'],
-                  config['init_not_greedy_prob'],
-                  config['not_greedy_prob_decay_fact']
-                  )
-
     # env = Pole()
     env = Gambler(win_prob=config['win_prob'])
     env = CartPoleEnv(pole_length=config['pole_length'],
@@ -99,6 +92,26 @@ if __name__ == '__main__':
                       timestep=config['timestep']
                       )
     env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
+
+    state_size = None
+    if isinstance(env, Gambler):
+        state_size = 98
+    if isinstance(env, CartPoleEnv):
+        state_size = pos_bins * cart_vel_bins * angle_bins * pole_vel_bins
+    if isinstance(env, Hanoi):
+        state_size = config['nr_pegs'] * config['nr_discs']
+
+    agent = Agent(config['critic_type'],
+                  config['actor_learning_rate'],
+                  config['critic_learning_rate'],
+                  config['actor_elig_decay_rate'],
+                  config['critic_elig_decay_rate'],
+                  config['actor_discount_fact'],
+                  config['critic_discount_fact'],
+                  config['init_not_greedy_prob'],
+                  config['not_greedy_prob_decay_fact'],
+                  config['nn_dims'],
+                  state_size)
 
     display = config['display']
 
@@ -159,13 +172,13 @@ if __name__ == '__main__':
             # Plotting shit
             steps += 1
             steps_episode += 1
-            deltas.append(copy.copy(agent.critic.get_delta()))
-            sum_eval.append(copy.copy(agent.critic.get_sum_eval()))
-            sum_policies.append(copy.copy(agent.actor.get_sum_policy()))
-            sum_eligs_critic.append(copy.copy(agent.critic.get_sum_elig()))
-            sum_eligs_actor.append(copy.copy(agent.actor.get_sum_elig()))
-            len_curr_ep_crit.append(copy.copy(agent.critic.get_size_current_episode()))
-            len_curr_ep_actor.append(copy.copy(agent.actor.get_size_current_episode()))
+            # deltas.append(copy.copy(agent.critic.get_delta()))
+            # sum_eval.append(copy.copy(agent.critic.get_sum_eval()))
+            # sum_policies.append(copy.copy(agent.actor.get_sum_policy()))
+            # sum_eligs_critic.append(copy.copy(agent.critic.get_sum_elig()))
+            # sum_eligs_actor.append(copy.copy(agent.actor.get_sum_elig()))
+            # len_curr_ep_crit.append(copy.copy(agent.critic.get_size_current_episode()))
+            # len_curr_ep_actor.append(copy.copy(agent.actor.get_size_current_episode()))
             actions.append(chosen_action)
             if isinstance(env, Gambler):
                 wagers[prev_state].append(chosen_action)
@@ -195,14 +208,14 @@ if __name__ == '__main__':
         # print(f'Policy size: {len(agent.actor.get_policy())}')
         # print(f'Eval size: {len(agent.critic.get_eval())}')
 
-        all_state_history.append(copy.copy(state_history))
-        len_eval.append(len(agent.critic.get_eval()))
+        # all_state_history.append(copy.copy(state_history))
+        # len_eval.append(len(agent.critic.get_eval()))
         state_history.clear()
         # print('\n\n')
 
     print('\n\n -- ALL EPISODES FINISHED --')
     print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
-    print(agent.critic.get_eval())
+    # print(agent.critic.get_eval())
     print(agent.actor.get_policy())
 
     episodes = [*range(nr_episodes)]

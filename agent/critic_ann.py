@@ -16,15 +16,14 @@ class ANNCritic:
     def __init__(
         self,
         layers,
-        state_shape,
+        state_size,
         learning_rate=0.001,
         discount_factor=0.9,
     ):
         self.layers = layers
-        self.state_shape = state_shape
         self.learning_rate = learning_rate
         self.discount_factor = discount_factor
-        self.v_model = self.build_model(self.layers, self.state_shape)
+        self.v_model = self.build_model(self.layers, state_size)
         self.td_error = 0.0
 
     @tf.function
@@ -33,9 +32,9 @@ class ANNCritic:
         squared_difference = tf.math.square(td_error_tensor)
         return squared_difference, td_error_tensor
 
-    def update_v_model(self, curr_state, next_state, reward):
-        s = tf.convert_to_tensor(to_np_array(to_tuple(curr_state)))
-        s_next = tf.convert_to_tensor(to_np_array(to_tuple(next_state)))
+    def update_td_error(self, curr_state, next_state, reward, done):
+        s = tf.convert_to_tensor(to_np_array(curr_state))
+        s_next = tf.convert_to_tensor(to_np_array(next_state))
         v_s_next = self.v_model(s_next)
         with tf.GradientTape() as tape:
             loss, td_error_tensor = self.compute_loss(
@@ -45,14 +44,15 @@ class ANNCritic:
         self.v_model.optimizer.apply_gradients(
             zip(grads, self.v_model.trainable_variables)
         )
-        return td_error_tensor
+        self.td_error = tf.keras.backend.eval(td_error_tensor)[0][0]
+        return self.td_error
 
-    def build_model(self, layers, state_shape):
+    def build_model(self, layers, state_size):
         model = tf.keras.Sequential()
         model.add(
             tf.keras.layers.Dense(
                 layers[0],
-                input_shape=(state_shape[0] * state_shape[1],),
+                # input_shape=(state_size,),
                 activation="relu",
             )
         )
@@ -63,6 +63,27 @@ class ANNCritic:
         model.compile(optimizer=optimizer, run_eagerly=False)
         return model
 
+    def get_delta(self):
+        return self.td_error
+
+    def update_elig(self, prev_state):
+        pass
+
+    def init_eval(self, new_state):
+        pass
+
+    def update_evals(self):
+        pass
+
+    def decay_eligs(self):
+        pass
+
+    def get_td_error(self):
+        return self.td_error
+
+    def new_episode(self):
+        pass
+
 
 def to_np_array(t):
     return np.array(np.asarray(t).flatten().reshape(1, -1))
@@ -71,3 +92,4 @@ def to_np_array(t):
 def to_tuple(d):
     items = d.values()
     return tuple(items)
+
