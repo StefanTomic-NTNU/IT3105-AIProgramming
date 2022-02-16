@@ -1,4 +1,5 @@
 from agent.actor import Actor
+from agent.critic_ann import ANNCritic
 from agent.critic_nn import CriticNN
 from agent.critic_table import CriticTable
 import json
@@ -28,7 +29,7 @@ class Agent:
                                       critic_discount_fact,
                                       critic_elig_decay_rate)
         elif critic_type == 'nn':
-            self.critic = CriticNN()
+            self.critic = ANNCritic
 
         else:
             raise Exception('Critic must be of type "table" or "nn"')

@@ -26,7 +26,7 @@ class CriticTable(agent.critic.Critic):
         :return:
         """
         if state not in self.__eval:
-            self.__eval[state] = random.uniform(0.1, 1)
+            self.__eval[state] = random.uniform(-0.1, 0.1)
 
     def update_evals(self):
         for state in self.__state_current_episode:
@@ -60,7 +60,7 @@ class CriticTable(agent.critic.Critic):
         # if done:
         #     self.update_elig(new_state)
         #     print('done')
-        self.__td_error = reward + self.__discount_factor * self.__eval[new_state] - self.__eval[prev_state]
+        self.__td_error = reward + self.__discount_factor * self.__eval[new_state] * (1-int(done)) - self.__eval[prev_state]
 
     def get_td_error(self):
         return self.__td_error

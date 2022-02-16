@@ -1,4 +1,6 @@
 # Code taken from https://github.com/RobertTLange/gym-hanoi
+import warnings
+
 import environment.environment
 
 import gym
@@ -67,8 +69,9 @@ class Hanoi(gym.Env):
             self.done = True
         elif info["invalid_action"] == True:
             reward = -1000
+            warnings.warn('Invalid action performed')
         else:
-            reward = -1
+            reward = 1
 
         return self.current_state, reward, self.done, info
 

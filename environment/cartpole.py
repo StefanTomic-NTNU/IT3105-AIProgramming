@@ -146,7 +146,7 @@ class CartPoleEnv(gym.Env):
         elif self.steps_beyond_done is None:
             # Pole just fell!
             self.steps_beyond_done = 0
-            reward = 1.0
+            reward = -10
         else:
             if self.steps_beyond_done == 0:
                 logger.warn(
@@ -161,7 +161,7 @@ class CartPoleEnv(gym.Env):
         return np.array(self.state, dtype=np.float32), reward, done, {}
 
     def reset(self):
-        self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
+        self.state = self.np_random.uniform(low=-0.10, high=0.10, size=(4,))
         self.state[0] = 0
         self.state[1] = 0
         self.state[3] = 0

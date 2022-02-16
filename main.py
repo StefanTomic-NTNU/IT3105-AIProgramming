@@ -26,13 +26,15 @@ def read_config():
     return config_
 
 
-def process_state(state):
+def process_state(state, done):
     if isinstance(state, np.ndarray):
+        if done:
+            return None
         # state_ = tuple(map(lambda x: round(x, ndigits=1), state))
-        state[0] = bin_state(state[0], -2.4, 2.4, 8)       # Pos
-        state[1] = bin_state(state[1], -3, 3, 8)            # Cart velocity
-        state[2] = bin_state(state[2], -0.42, 0.42, 15)     # Angle
-        state[3] = bin_state(state[3], -3, 3, 8)            # Pole velocity
+        state[0] = bin_state(state[0], -2.4, 2.4, 7)        # Pos
+        state[1] = bin_state(state[1], -2, 2, 7)            # Cart velocity
+        state[2] = bin_state(state[2], -0.21, 0.21, 13)     # Angle
+        state[3] = bin_state(state[3], -2, 2, 8)            # Pole velocity
         state_ = tuple(state)
         return state_
     return state
@@ -91,12 +93,12 @@ if __name__ == '__main__':
 
     # env = Pole()
     env = Gambler(win_prob=config['win_prob'])
-    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
     env = CartPoleEnv(pole_length=config['pole_length'],
                       pole_mass=config['pole_mass'],
                       gravity=config['gravity'],
                       timestep=config['timestep']
                       )
+    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
 
     display = config['display']
 
@@ -107,6 +109,7 @@ if __name__ == '__main__':
 
     all_state_history = []
     for i_episode in range(nr_episodes):    # Repeat for each episode:
+        done = False
         state_history = []
 
         sum_reward = 0
@@ -119,7 +122,7 @@ if __name__ == '__main__':
         # new_state = copy.copy(observation)
         # new_actions = process_actions(env, env.action_space)
 
-        prev_state = process_state(observation)
+        prev_state = process_state(observation, done)
         prev_actions = process_actions(env, env.action_space)
 
         new_state = None
@@ -137,9 +140,12 @@ if __name__ == '__main__':
 
             observation, reward, done, info = env.step(chosen_action)
 
+            if done:
+                print('lol')
+
             sum_reward += reward
 
-            new_state = process_state(observation)
+            new_state = process_state(observation, done)
             state_history.append(new_state)
             # print(new_state)
             new_actions = process_actions(env, env.action_space)
@@ -167,14 +173,14 @@ if __name__ == '__main__':
                 angles.append(observation[3])
                 greedy_steps.append(t)
 
-            if done:
-                print("Episode finished after {} timesteps, with reward {}".format(t + 1, sum_reward))
-                break
-
             agent.update_chosen_action(new_state, new_actions)
             chosen_action = agent.get_action()
 
             agent.learn(prev_state, prev_actions, chosen_action, reward, new_state, new_actions, done)
+
+            if done:
+                print("Episode finished after {} timesteps, with reward {}".format(t + 1, sum_reward))
+                break
 
             prev_state = copy.copy(new_state)
             prev_actions = copy.copy(new_actions)
@@ -182,7 +188,7 @@ if __name__ == '__main__':
         scores.append(sum_reward)
         step_list.append(steps_episode)
         print(f'Episode: {i_episode}')
-        # print(state_history)
+        print(state_history)
         print(f'Final state: {new_state}')
         # print(f'Final score: {sum_reward}')
         print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')

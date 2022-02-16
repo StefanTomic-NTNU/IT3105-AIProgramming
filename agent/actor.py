@@ -20,13 +20,14 @@ class Actor:
 
     def get_optimal_action(self, state, actions):
         """ Picks action greedily """
-        optimal_action = random.choice(actions)
+        # optimal_action = random.choice(actions)
         # TODO: Change to just performed saps
         # self.add_saps_to_current_episode(state, actions)
-        for action in actions:
-            if self.__policy[(state, action)] > self.__policy[(state, optimal_action)]:
-                optimal_action = action
-        return optimal_action
+        # for action in actions:
+        #     if self.__policy[(state, action)] > self.__policy[(state, optimal_action)]:
+        #         optimal_action = action
+        return max(actions, key=lambda a: self.__policy[(state, a)])    # argmax
+        # return optimal_action
 
     def update_chosen_action(self, state, actions):
         """
