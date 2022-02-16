@@ -26,7 +26,7 @@ class CriticTable(agent.critic.Critic):
         :return:
         """
         if state not in self.__eval:
-            self.__eval[state] = random.uniform(-1, 0)
+            self.__eval[state] = random.uniform(0.1, 1)
 
     def update_evals(self):
         for state in self.__state_current_episode:

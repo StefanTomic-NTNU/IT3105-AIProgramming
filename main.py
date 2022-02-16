@@ -29,10 +29,10 @@ def read_config():
 def process_state(state):
     if isinstance(state, np.ndarray):
         # state_ = tuple(map(lambda x: round(x, ndigits=1), state))
-        state[0] = bin_state(state[0], -2.4, 2.4, 6)        # Pos
-        state[1] = bin_state(state[1], -2, 2, 6)            # Cart velocity
+        state[0] = bin_state(state[0], -2.4, 2.4, 8)       # Pos
+        state[1] = bin_state(state[1], -3, 3, 8)            # Cart velocity
         state[2] = bin_state(state[2], -0.42, 0.42, 15)     # Angle
-        state[3] = bin_state(state[3], -1, 1, 8)            # Pole velocity
+        state[3] = bin_state(state[3], -3, 3, 8)            # Pole velocity
         state_ = tuple(state)
         return state_
     return state
@@ -63,6 +63,7 @@ if __name__ == '__main__':
     deltas = []
     sum_eval = []
     sum_policies = []
+    len_eval = []
     sum_eligs_critic = []
     sum_eligs_actor = []
     len_curr_ep_crit = []
@@ -70,6 +71,8 @@ if __name__ == '__main__':
     step_list = []
     actions = []
     wagers = []
+    angles = []
+    greedy_steps = []
     for i in range(100):
         wagers.append([])
 
@@ -87,13 +90,13 @@ if __name__ == '__main__':
                   )
 
     # env = Pole()
+    env = Gambler(win_prob=config['win_prob'])
+    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
     env = CartPoleEnv(pole_length=config['pole_length'],
                       pole_mass=config['pole_mass'],
                       gravity=config['gravity'],
                       timestep=config['timestep']
                       )
-    env = Gambler(win_prob=config['win_prob'])
-    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
 
     display = config['display']
 
@@ -163,6 +166,9 @@ if __name__ == '__main__':
             actions.append(chosen_action)
             if isinstance(env, Gambler):
                 wagers[prev_state].append(chosen_action)
+            if isinstance(env, CartPoleEnv) and i_episode == nr_episodes-1:
+                angles.append(new_state[3])
+                greedy_steps.append(t)
 
             if done:
                 print("Episode finished after {} timesteps, with reward {}".format(t + 1, sum_reward))
@@ -179,14 +185,15 @@ if __name__ == '__main__':
         scores.append(sum_reward)
         step_list.append(steps_episode)
         print(f'Episode: {i_episode}')
-        print(state_history)
-        # print(f'Final state: {new_state}')
+        # print(state_history)
+        print(f'Final state: {new_state}')
         # print(f'Final score: {sum_reward}')
         print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
-        # print(f'Policy size: {len(agent.actor.get_policy())}')
-        # print(f'Eval size: {len(agent.critic.get_eval())}')
+        print(f'Policy size: {len(agent.actor.get_policy())}')
+        print(f'Eval size: {len(agent.critic.get_eval())}')
 
         all_state_history.append(copy.copy(state_history))
+        len_eval.append(len(agent.critic.get_eval()))
         state_history.clear()
         # print('\n\n')
 
@@ -205,6 +212,11 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots()  # Create a figure containing a single axes.
     ax.plot(episodes, step_list, label='Steps')  # Plot some data on the axes.
+    ax.legend()
+    plt.show()
+
+    fig, ax = plt.subplots()  # Create a figure containing a single axes.
+    ax.plot(episodes, len_eval, label='Length eval')  # Plot some data on the axes.
     ax.legend()
     plt.show()
 
@@ -238,6 +250,11 @@ if __name__ == '__main__':
         # ax.plot(steps, actions, label='Actions taken')  # Plot some data on the axes.
         # ax.legend()
         # plt.show()
+        if isinstance(env, CartPoleEnv):
+            fig, ax = plt.subplots()  # Create a figure containing a single axes.
+            ax.plot(greedy_steps, angles, label='Angles of greedy episode')  # Plot some data on the axes.
+            ax.legend()
+            plt.show()
 
         if isinstance(env, Gambler):
             # print(wagers)
