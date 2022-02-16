@@ -160,9 +160,6 @@ if __name__ == '__main__':
 
             observation, reward, done, info = env.step(chosen_action)
 
-            if done:
-                print('lol')
-
             sum_reward += reward
 
             new_state = process_state(observation, done)
@@ -199,7 +196,7 @@ if __name__ == '__main__':
             agent.learn(prev_state, prev_actions, chosen_action, reward, new_state, new_actions, done)
 
             if done:
-                print("Episode finished after {} timesteps, with reward {}".format(t + 1, sum_reward))
+                # print("Episode finished after {} timesteps, with reward {}".format(t + 1, sum_reward))
                 break
 
             prev_state = copy.copy(new_state)
@@ -207,11 +204,11 @@ if __name__ == '__main__':
 
         scores.append(sum_reward)
         step_list.append(steps_episode)
-        print(f'Episode: {i_episode}')
-        print(state_history)
-        print(f'Final state: {new_state}')
+        # print(f'Episode: {i_episode}')
+        # print(state_history)
+        # print(f'Final state: {new_state}')
         # print(f'Final score: {sum_reward}')
-        print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
+        # print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
         # print(f'Policy size: {len(agent.actor.get_policy())}')
         # print(f'Eval size: {len(agent.critic.get_eval())}')
 
@@ -220,12 +217,11 @@ if __name__ == '__main__':
         state_history.clear()
         # print('\n\n')
 
-    print('\n\n -- ALL EPISODES FINISHED --')
-    print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
-    # print(agent.critic.get_eval())
-    print(agent.actor.get_policy())
+    # print('\n\n -- ALL EPISODES FINISHED --')
+    # print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
+    # # print(agent.critic.get_eval())
+    # print(agent.actor.get_policy())
 
-    print(f'Seed: {seed}')
     episodes = [*range(nr_episodes)]
     steps = [*range(steps)]
 
@@ -274,11 +270,11 @@ if __name__ == '__main__':
         # ax.plot(steps, actions, label='Actions taken')  # Plot some data on the axes.
         # ax.legend()
         # plt.show()
-        if isinstance(env, CartPoleEnv):
-            fig, ax = plt.subplots()  # Create a figure containing a single axes.
-            ax.plot(greedy_steps, angles, label='Angles of greedy episode')  # Plot some data on the axes.
-            ax.legend()
-            plt.show()
+        # if isinstance(env, CartPoleEnv):
+        #     fig, ax = plt.subplots()  # Create a figure containing a single axes.
+        #     ax.plot(greedy_steps, angles, label='Angles of greedy episode')  # Plot some data on the axes.
+        #     ax.legend()
+        #     plt.show()
 
         if isinstance(env, Gambler):
             # print(wagers)
@@ -307,4 +303,16 @@ if __name__ == '__main__':
             plt.show()
 
     env.close()
+    # return steps
+#
+#
+# results = []
+#
+# for i in range(100, 200):
+#     print(f'Seed {i}\n\n')
+#     results.append(run(i))
+#
+# print(results)
+# print(f'Max: {max(results)}')
+# print(f'Index of Max: {results.index(max(results))}')
 

@@ -1,5 +1,5 @@
 {
-  "nr_episodes":                300,
+  "nr_episodes":                400,
   "max_steps":                  300,
   "critic_type":                "table",
   "nn_dims":                    [15, 20, 30, 5, 1],
