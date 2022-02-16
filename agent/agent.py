@@ -1,5 +1,4 @@
 from agent.actor import Actor
-from agent.critic_ann import ANNCritic
 from agent.critic_nn import CriticNN
 from agent.critic_table import CriticTable
 import json
@@ -33,10 +32,9 @@ class Agent:
                                       critic_elig_decay_rate,
                                       seed=seed)
         elif critic_type == 'nn':
-            self.critic = ANNCritic(nn_dims,
-                                    state_shape,
-                                    critic_learning_rate)
-            # self.critic = CriticNN(alpha=critic_learning_rate, gamma=critic_discount_fact)
+            self.critic = CriticNN(nn_dims,
+                                   state_shape,
+                                   critic_learning_rate)
         else:
             raise Exception('Critic must be of type "table" or "nn"')
 

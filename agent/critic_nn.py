@@ -1,55 +1,64 @@
-import numpy as np
+import os
+
 import tensorflow as tf
 from keras.optimizers import adam_v2
-import tensorflow_probability as tfp
+import numpy as np
 
-from agent.neural_network import NeuralNetwork
+from agent.critic import Critic
 
 
-class CriticNN():
-    def __init__(self, alpha=0.0003, gamma=0.99):
-        self.gamma = gamma
-        self.neural_network = NeuralNetwork()
-        self.neural_network.compile(optimizer=adam_v2.Adam(learning_rate=alpha))
-        self.__td_error = 0
+class CriticNN(Critic):
+    def __init__(self, layers, learning_rate=0.003, discount_factor=0.91, name='actor_critic',
+                 chkpt_dir='tmp/actor_critic'):
+        super().__init__()
+        self.layers = layers
+        self.__learning_rate = learning_rate        # alpha
+        self.__discount_factor = discount_factor    # gamma
+        self.__eval_model = self.compile_model(self.layers)
+        self.__td_error = 0.00
 
-    def choose_action(self, observation):
-        state = tf.convert_to_tensor([observation])
-        _, probs = self.neural_network(state)
+        # variables not in use
+        self.model_name = name
+        self.checkpoint_dir = chkpt_dir
+        self.checkpoint_file = os.path.join(self.checkpoint_dir, name + '_ac')
 
     def update_td_error(self, prev_state, new_state, reward, done):
-        prev_state = tf.convert_to_tensor([prev_state], dtype=tf.float32)
-        new_state = tf.convert_to_tensor([new_state], dtype=tf.float32)
-        reward = tf.convert_to_tensor([reward], dtype=tf.float32)
+        """
+        Updates td error of critic
+        :param prev_state:  s
+        :param new_state:   s'
+        :param reward:      reward from state transition
+        :param done:        done flag
+        """
+        prev_state = tf.convert_to_tensor(tuple_to_np_array(prev_state))
+        new_state = tf.convert_to_tensor(tuple_to_np_array(new_state))
+        with tf.GradientTape() as tape:
+            loss, td_error_tensor = get_loss(
+                reward +
+                self.__discount_factor *
+                self.__eval_model(new_state) * int(1 - done),
+                self.__eval_model(prev_state)
+            )
+        gradients = tape.gradient(loss, self.__eval_model.trainable_variables)
+        self.__eval_model.optimizer.apply_gradients(zip(gradients, self.__eval_model.trainable_variables))
+        self.__td_error = tf.keras.backend.eval(td_error_tensor)[0][0]
 
-        with tf.GradientTape(persistent=True) as tape:
-            prev_state_value = self.neural_network(prev_state)
-            new_state_value = self.neural_network(new_state)
-            prev_state_value = tf.squeeze(prev_state_value)
-            new_state_value = tf.squeeze(new_state_value)
-
-            # print(reward)
-            # print(self.gamma)
-            # print(new_state_value)
-            # print(1 - int(done))
-            # print(prev_state_value)
-            delta = reward + self.gamma * new_state_value * (1 - int(done)) - prev_state_value
-            loss = delta**2
-
-            gradient = tape.gradient(loss, self.neural_network.trainable_variables)
-            self.neural_network.optimizer.apply_gradients(zip(gradient, self.neural_network.trainable_variables))
-
-            target = reward + self.gamma * self.stateValue(new_state)
-            self.__td_error = tf.keras.backend.eval(target - self.stateValue(prev_state))[0]
-
-    def stateValue(self, state):
-        # state = [tf.float32.to_number(bin, out_type=tf.dtypes.int32) for bin in state]  # convert to array
-        state = tf.convert_to_tensor(np.expand_dims(state, axis=0))
-        return self.neural_network(state).numpy()[0][0]
+    def compile_model(self, layers):
+        model = tf.keras.Sequential()
+        for i in range(0, len(layers) - 1):
+            model.add(tf.keras.layers.Dense(layers[i], activation="relu"))
+        model.add(tf.keras.layers.Dense(layers[-1]))
+        optimizer = tf.keras.optimizers.Adam(learning_rate=self.__learning_rate)
+        model.compile(optimizer=adam_v2.Adam(learning_rate=self.__learning_rate), run_eagerly=False)
+        return model
 
     def get_delta(self):
         return self.__td_error
 
+    def get_td_error(self):
+        return self.__td_error
+
+    # Funcs for compatibility with table based crititc
     def update_elig(self, prev_state):
         pass
 
@@ -62,9 +71,22 @@ class CriticNN():
     def decay_eligs(self):
         pass
 
-    def get_td_error(self):
-        return self.__td_error
-
     def new_episode(self):
         pass
-            
+
+
+@tf.function
+def get_loss(true_target, predicted_target):
+    """
+    Util func for calculaiting loss
+    :param true_target:
+    :param predicted_target:
+    :return:
+    """
+    td_error_tensor = true_target - predicted_target
+    loss = td_error_tensor**2
+    return loss, td_error_tensor
+
+
+def tuple_to_np_array(t): return np.array(np.asarray(t).flatten().reshape(1, -1))
+

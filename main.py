@@ -27,7 +27,7 @@ def read_config():
     return config_
 
 
-seed = 126
+seed_ = 126
 
 
 pos_bins = 7
@@ -69,7 +69,7 @@ def process_actions(env_, actions):
     return tuple([d for (d, legal_action) in zip(actions_, legal_actions) if legal_action])
 
 
-if __name__ == '__main__':
+def run(seed):
     scores = []
     deltas = []
     sum_eval = []
@@ -90,14 +90,14 @@ if __name__ == '__main__':
     config = read_config()
 
     # env = Pole()
+    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
+    env = Gambler(win_prob=config['win_prob'])
     env = CartPoleEnv(pole_length=config['pole_length'],
                       pole_mass=config['pole_mass'],
                       gravity=config['gravity'],
                       timestep=config['timestep']
                       )
     env.seed(seed)
-    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
-    env = Gambler(win_prob=config['win_prob'])
 
     state_size = None
     if isinstance(env, Gambler):
@@ -156,7 +156,7 @@ if __name__ == '__main__':
 
             if display and i_episode == nr_episodes - 1:
                 agent.actor.set_not_greedy_prob(0)
-                env.render()
+                # env.render()
 
             observation, reward, done, info = env.step(chosen_action)
 
@@ -198,7 +198,7 @@ if __name__ == '__main__':
             agent.learn(prev_state, prev_actions, chosen_action, reward, new_state, new_actions, done)
 
             if done:
-                print("Episode finished after {} timesteps, with reward {}".format(t + 1, sum_reward))
+                # print("Episode finished after {} timesteps, with reward {}".format(t + 1, sum_reward))
                 break
 
             prev_state = copy.copy(new_state)
@@ -206,11 +206,11 @@ if __name__ == '__main__':
 
         scores.append(sum_reward)
         step_list.append(steps_episode)
-        print(f'Episode: {i_episode}')
+        # print(f'Episode: {i_episode}')
         # print(state_history)
         # print(f'Final state: {new_state}')
         # print(f'Final score: {sum_reward}')
-        print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
+        # print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
         # print(f'Policy size: {len(agent.actor.get_policy())}')
         # print(f'Eval size: {len(agent.critic.get_eval())}')
 
@@ -225,7 +225,7 @@ if __name__ == '__main__':
     # print(agent.actor.get_policy())
 
     episodes = [*range(nr_episodes)]
-    steps = [*range(steps)]
+    # steps = [*range(steps)]
 
     # fig, ax = plt.subplots()  # Create a figure containing a single axes.
     # ax.plot(episodes, scores, label='Scores')  # Plot some data on the axes.
@@ -305,16 +305,19 @@ if __name__ == '__main__':
             plt.show()
 
     env.close()
-    # return steps
-#
-#
-# results = []
-#
+    return steps
+
+
+results = []
+
 # for i in range(100, 200):
 #     print(f'Seed {i}\n\n')
 #     results.append(run(i))
-#
-# print(results)
+
+
+results.append(run(136))
+
+print(results)
 # print(f'Max: {max(results)}')
 # print(f'Index of Max: {results.index(max(results))}')
 
