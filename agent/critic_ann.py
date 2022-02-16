@@ -19,6 +19,7 @@ class ANNCritic:
         state_size,
         learning_rate=0.001,
         discount_factor=0.9,
+        seed=None
     ):
         self.layers = layers
         self.learning_rate = learning_rate

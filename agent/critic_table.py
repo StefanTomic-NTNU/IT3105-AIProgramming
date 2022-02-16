@@ -5,7 +5,7 @@ import agent.critic
 
 
 class CriticTable(agent.critic.Critic):
-    def __init__(self, learning_rate, discount_factor, trace_decay_fact):
+    def __init__(self, learning_rate, discount_factor, trace_decay_fact, seed=None):
         super().__init__()
         self.__learning_rate = learning_rate        # alpha
         self.__discount_factor = discount_factor    # gamma
@@ -18,6 +18,8 @@ class CriticTable(agent.critic.Critic):
         self.disc = []
         self.prev = []
         self.new = []
+        if seed:
+            random.seed(seed)
 
     def init_eval(self, state):
         """

@@ -4,7 +4,7 @@ import random
 
 class Actor:
     def __init__(self, learning_rate, discount_factor, trace_decay_fact, init_not_greedy_prob,
-                 not_greedy_prob_decay_fact):
+                 not_greedy_prob_decay_fact, seed=None):
         self.__learning_rate = learning_rate  # alpha
         self.__discount_factor = discount_factor  # gamma
         self.__trace_decay_fact = trace_decay_fact  # lambda
@@ -14,6 +14,8 @@ class Actor:
         self.__elig = dict()  # e(s, a) -> eligibility
         self.__sap_current_episode = []
         self.__chosen_action = None
+        if seed:
+            random.seed(seed)
 
     def get_chosen_action(self):
         return self.__chosen_action
@@ -81,7 +83,7 @@ class Actor:
         if (state, action) not in self.__policy:
             self.__policy[(state, action)] = 0
         # print(type(delta))
-        self.__policy[(state, action)] -= self.__learning_rate * delta * self.__elig[(state, action)]
+        self.__policy[(state, action)] += self.__learning_rate * delta * self.__elig[(state, action)]
 
     def update_elig(self, state, action):
         """

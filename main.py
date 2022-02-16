@@ -9,6 +9,7 @@ import gym
 
 import matplotlib.pyplot as plt
 from gym.spaces import Discrete
+from gym.utils import seeding
 
 from environment.cartpole import CartPoleEnv
 from environment.pole import Pole
@@ -24,6 +25,10 @@ def read_config():
     with open('config.json', 'r') as f:
         config_ = json.load(f)
     return config_
+
+
+seed = 126
+
 
 pos_bins = 7
 cart_vel_bins = 7
@@ -86,12 +91,13 @@ if __name__ == '__main__':
 
     # env = Pole()
     env = Gambler(win_prob=config['win_prob'])
+    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
     env = CartPoleEnv(pole_length=config['pole_length'],
                       pole_mass=config['pole_mass'],
                       gravity=config['gravity'],
                       timestep=config['timestep']
                       )
-    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
+    env.seed(seed)
 
     state_size = None
     if isinstance(env, Gambler):
@@ -111,7 +117,8 @@ if __name__ == '__main__':
                   config['init_not_greedy_prob'],
                   config['not_greedy_prob_decay_fact'],
                   config['nn_dims'],
-                  state_size)
+                  state_size,
+                  seed=seed)
 
     display = config['display']
 
@@ -218,37 +225,38 @@ if __name__ == '__main__':
     # print(agent.critic.get_eval())
     print(agent.actor.get_policy())
 
+    print(f'Seed: {seed}')
     episodes = [*range(nr_episodes)]
     steps = [*range(steps)]
 
-    fig, ax = plt.subplots()  # Create a figure containing a single axes.
-    ax.plot(episodes, scores, label='Scores')  # Plot some data on the axes.
-    ax.legend()
-    plt.show()
+    # fig, ax = plt.subplots()  # Create a figure containing a single axes.
+    # ax.plot(episodes, scores, label='Scores')  # Plot some data on the axes.
+    # ax.legend()
+    # plt.show()
 
     fig, ax = plt.subplots()  # Create a figure containing a single axes.
     ax.plot(episodes, step_list, label='Steps')  # Plot some data on the axes.
     ax.legend()
     plt.show()
 
-    fig, ax = plt.subplots()  # Create a figure containing a single axes.
-    ax.plot(episodes, len_eval, label='Length eval')  # Plot some data on the axes.
-    ax.legend()
-    plt.show()
+    # fig, ax = plt.subplots()  # Create a figure containing a single axes.
+    # ax.plot(episodes, len_eval, label='Length eval')  # Plot some data on the axes.
+    # ax.legend()
+    # plt.show()
 
     if True:
-        fig, ax = plt.subplots()  # Create a figure containing a single axes.
-        ax.plot(steps, deltas, label='Deltas')  # Plot some data on the axes.
-        ax.legend()
-        plt.show()
-
-        avg_eval = np.array(sum_eval) / len(agent.critic.get_eval().keys())
-        avg_pol = np.array(sum_policies) / len(agent.actor.get_policy().keys())
-        fig, ax = plt.subplots()  # Create a figure containing a single axes.
-        ax.plot(steps, avg_eval, label='Avg eval critic')  # Plot some data on the axes.
-        ax.plot(steps, avg_pol, label='Avg Policies actor')  # Plot some data on the axes.
-        ax.legend()
-        plt.show()
+        # fig, ax = plt.subplots()  # Create a figure containing a single axes.
+        # ax.plot(steps, deltas, label='Deltas')  # Plot some data on the axes.
+        # ax.legend()
+        # plt.show()
+        #
+        # avg_eval = np.array(sum_eval) / len(agent.critic.get_eval().keys())
+        # avg_pol = np.array(sum_policies) / len(agent.actor.get_policy().keys())
+        # fig, ax = plt.subplots()  # Create a figure containing a single axes.
+        # ax.plot(steps, avg_eval, label='Avg eval critic')  # Plot some data on the axes.
+        # ax.plot(steps, avg_pol, label='Avg Policies actor')  # Plot some data on the axes.
+        # ax.legend()
+        # plt.show()
 
         # fig, ax = plt.subplots()  # Create a figure containing a single axes.
         # ax.plot(steps, sum_eligs_critic, label='Elig critic')  # Plot some data on the axes.
@@ -299,3 +307,4 @@ if __name__ == '__main__':
             plt.show()
 
     env.close()
+
