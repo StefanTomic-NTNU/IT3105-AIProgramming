@@ -91,12 +91,12 @@ if __name__ == '__main__':
 
     # env = Pole()
     env = Gambler(win_prob=config['win_prob'])
-    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
     env = CartPoleEnv(pole_length=config['pole_length'],
                       pole_mass=config['pole_mass'],
                       gravity=config['gravity'],
                       timestep=config['timestep']
                       )
+    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
     env.seed(seed)
 
     state_size = None
@@ -190,13 +190,15 @@ if __name__ == '__main__':
                 angles.append(observation[3])
                 greedy_steps.append(t)
 
+            if done and not new_actions:
+                new_actions = (0,)
             agent.update_chosen_action(new_state, new_actions)
             chosen_action = agent.get_action()
 
             agent.learn(prev_state, prev_actions, chosen_action, reward, new_state, new_actions, done)
 
             if done:
-                # print("Episode finished after {} timesteps, with reward {}".format(t + 1, sum_reward))
+                print("Episode finished after {} timesteps, with reward {}".format(t + 1, sum_reward))
                 break
 
             prev_state = copy.copy(new_state)
@@ -204,11 +206,11 @@ if __name__ == '__main__':
 
         scores.append(sum_reward)
         step_list.append(steps_episode)
-        # print(f'Episode: {i_episode}')
+        print(f'Episode: {i_episode}')
         # print(state_history)
         # print(f'Final state: {new_state}')
         # print(f'Final score: {sum_reward}')
-        # print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
+        print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
         # print(f'Policy size: {len(agent.actor.get_policy())}')
         # print(f'Eval size: {len(agent.critic.get_eval())}')
 
