@@ -44,11 +44,15 @@ class CriticNN(Critic):
         self.__td_error = tf.keras.backend.eval(td_error_tensor)[0][0]
 
     def compile_model(self, layers):
+        """
+        Compiles keras model
+        :param layers:  1D array of nodes in each layer
+        :return: model
+        """
         model = tf.keras.Sequential()
         for i in range(0, len(layers) - 1):
             model.add(tf.keras.layers.Dense(layers[i], activation="relu"))
         model.add(tf.keras.layers.Dense(layers[-1]))
-        optimizer = tf.keras.optimizers.Adam(learning_rate=self.__learning_rate)
         model.compile(optimizer=adam_v2.Adam(learning_rate=self.__learning_rate), run_eagerly=False)
         return model
 
@@ -88,5 +92,5 @@ def get_loss(true_target, predicted_target):
     return loss, td_error_tensor
 
 
-def tuple_to_np_array(t): return np.array(np.asarray(t).flatten().reshape(1, -1))
+def tuple_to_np_array(tup): return np.array(np.asarray(tup).flatten().reshape(1, -1))
 
