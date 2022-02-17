@@ -90,14 +90,14 @@ def run(seed):
     config = read_config()
 
     # env = Pole()
-    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
-    env = Gambler(win_prob=config['win_prob'])
     env = CartPoleEnv(pole_length=config['pole_length'],
                       pole_mass=config['pole_mass'],
                       gravity=config['gravity'],
                       timestep=config['timestep']
                       )
     env.seed(seed)
+    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
+    env = Gambler(win_prob=config['win_prob'])
 
     state_size = None
     if isinstance(env, Gambler):

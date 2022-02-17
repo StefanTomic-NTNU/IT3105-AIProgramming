@@ -1,0 +1,26 @@
+{
+  "nr_episodes":                200,
+  "max_steps":                  1000,
+  "critic_type":                "table",
+  "nn_dims":                    [1024, 512, 32, 1],
+  "actor_learning_rate":        -0.40,
+  "critic_learning_rate":       0.10,
+  "actor_elig_decay_rate":      0.80,
+  "critic_elig_decay_rate":     0.75,
+  "actor_discount_fact":        0.75,
+  "critic_discount_fact":       0.99,
+  "init_not_greedy_prob":       0.50,
+  "not_greedy_prob_decay_fact": 0.98,
+  "display":                    1,
+  "frame_delay":                1,
+
+  "pole_length":                1.0,
+  "pole_mass":                  0.1,
+  "gravity":                    9.8,
+  "timestep":                   0.02,
+
+  "nr_pegs":                    3,
+  "nr_discs":                   4,
+
+  "win_prob":                   0.30
+}

@@ -36,7 +36,7 @@ class CriticNN(Critic):
             loss, td_error_tensor = get_loss(
                 reward +
                 self.__discount_factor *
-                self.__eval_model(new_state) * int(1 - done),
+                self.__eval_model(new_state),
                 self.__eval_model(prev_state)
             )
         gradients = tape.gradient(loss, self.__eval_model.trainable_variables)
