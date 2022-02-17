@@ -16,12 +16,21 @@ class CriticNN(Critic):
         self.__learning_rate = learning_rate        # alpha
         self.__discount_factor = discount_factor    # gamma
         self.__td_error = 0                         # delta
-        self.__eval_model = self.compile_model(self.layers)
 
         # variables used for checkpointing. Currently not in use.
         self.model_name = name
         self.checkpoint_dir = chkpt_dir
         self.checkpoint_file = os.path.join(self.checkpoint_dir, name + '_ac')
+
+        # Compile model:
+        model = tf.keras.Sequential()
+        for i in range(0, len(layers)):
+            if i == len(layers)-1:
+                model.add(tf.keras.layers.Dense(layers[i]))
+            else:
+                model.add(tf.keras.layers.Dense(layers[i], activation="relu"))
+        model.compile(optimizer=adam_v2.Adam(learning_rate=self.__learning_rate), run_eagerly=False)
+        self.__eval_model = model
 
     def update_td_error(self, prev_state, new_state, reward, done):
         """
@@ -45,19 +54,6 @@ class CriticNN(Critic):
         gradients = tape.gradient(loss, self.__eval_model.trainable_variables)
         self.__eval_model.optimizer.apply_gradients(zip(gradients, self.__eval_model.trainable_variables))
         self.__td_error = tf.keras.backend.eval(td_error_tensor)[0][0]
-
-    def compile_model(self, layers):
-        """
-        Compiles keras model
-        :param layers:  1D array of nodes in each layer
-        :return: model
-        """
-        model = tf.keras.Sequential()
-        for i in range(0, len(layers) - 1):
-            model.add(tf.keras.layers.Dense(layers[i], activation="relu"))
-        model.add(tf.keras.layers.Dense(layers[-1]))
-        model.compile(optimizer=adam_v2.Adam(learning_rate=self.__learning_rate), run_eagerly=False)
-        return model
 
     def get_delta(self):
         return self.__td_error
