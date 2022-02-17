@@ -94,13 +94,13 @@ def run(seed):
 
     # env = Pole()
     env = Gambler(win_prob=config['win_prob'])
-    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
     env = CartPoleEnv(pole_length=config['pole_length'],
                       pole_mass=config['pole_mass'],
                       gravity=config['gravity'],
                       timestep=config['timestep']
                       )
     env.seed(seed)
+    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
 
     state_size = None
     if isinstance(env, Gambler):
@@ -211,7 +211,7 @@ def run(seed):
         scores.append(sum_reward)
         step_list.append(steps_episode)
         print(f'Episode: {i_episode}')
-        # print(state_history)
+        print(state_history)
         # print(f'Final state: {new_state}')
         print(f'Final score: {sum_reward}')
         print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
@@ -221,92 +221,29 @@ def run(seed):
         # all_state_history.append(copy.copy(state_history))
         # len_eval.append(len(agent.critic.get_eval()))
         state_history.clear()
-        # print('\n\n')
-
-    # print('\n\n -- ALL EPISODES FINISHED --')
-    # print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
-    # # print(agent.critic.get_eval())
-    # print(agent.actor.get_policy())
 
     episodes = [*range(nr_episodes)]
-    # steps = [*range(steps)]
-
-    # fig, ax = plt.subplots()  # Create a figure containing a single axes.
-    # ax.plot(episodes, scores, label='Scores')  # Plot some data on the axes.
-    # ax.legend()
-    # plt.show()
 
     fig, ax = plt.subplots()  # Create a figure containing a single axes.
     ax.plot(episodes, step_list, label='Steps')  # Plot some data on the axes.
     ax.legend()
     plt.show()
 
-    # fig, ax = plt.subplots()  # Create a figure containing a single axes.
-    # ax.plot(episodes, len_eval, label='Length eval')  # Plot some data on the axes.
-    # ax.legend()
-    # plt.show()
+    if isinstance(env, Gambler):
+        # Greedy strat:
+        agent.actor.set_not_greedy_prob(0)
+        greedy_actions = []
+        states = range(1, 100)
+        for i in range(1, 100):
+            env.state = i
+            env.update_action_space()
+            actions = env.action_space
+            greedy_actions.append(agent.actor.get_optimal_action(i, process_actions(env, actions)))
 
-    if True:
-        # fig, ax = plt.subplots()  # Create a figure containing a single axes.
-        # ax.plot(steps, deltas, label='Deltas')  # Plot some data on the axes.
-        # ax.legend()
-        # plt.show()
-        #
-        # avg_eval = np.array(sum_eval) / len(agent.critic.get_eval().keys())
-        # avg_pol = np.array(sum_policies) / len(agent.actor.get_policy().keys())
-        # fig, ax = plt.subplots()  # Create a figure containing a single axes.
-        # ax.plot(steps, avg_eval, label='Avg eval critic')  # Plot some data on the axes.
-        # ax.plot(steps, avg_pol, label='Avg Policies actor')  # Plot some data on the axes.
-        # ax.legend()
-        # plt.show()
-
-        # fig, ax = plt.subplots()  # Create a figure containing a single axes.
-        # ax.plot(steps, sum_eligs_critic, label='Elig critic')  # Plot some data on the axes.
-        # ax.plot(steps, sum_eligs_actor, label='Elig actor')  # Plot some data on the axes.
-        # ax.legend()
-        # plt.show()
-
-        # fig, ax = plt.subplots()  # Create a figure containing a single axes.
-        # ax.plot(steps, len_curr_ep_crit, label='Current episode critic')  # Plot some data on the axes.
-        # ax.plot(steps, len_curr_ep_actor, label='Current episode actor')  # Plot some data on the axes.
-        # ax.legend()
-        # plt.show()
-
-        # fig, ax = plt.subplots()  # Create a figure containing a single axes.
-        # ax.plot(steps, actions, label='Actions taken')  # Plot some data on the axes.
-        # ax.legend()
-        # plt.show()
-        # if isinstance(env, CartPoleEnv):
-        #     fig, ax = plt.subplots()  # Create a figure containing a single axes.
-        #     ax.plot(greedy_steps, angles, label='Angles of greedy episode')  # Plot some data on the axes.
-        #     ax.legend()
-        #     plt.show()
-
-        if isinstance(env, Gambler):
-            # print(wagers)
-            # wagers_avg = []
-            # for i in range(1, len(wagers)):
-            #     wagers_avg.append(statistics.fmean(wagers[i]))
-            #
-            # fig, ax = plt.subplots()  # Create a figure containing a single axes.
-            # ax.plot(episodes, wagers_avg, label='Avg bet')  # Plot some data on the axes.
-            # ax.legend()
-            # plt.show()
-
-            # Greedy strat:
-            agent.actor.set_not_greedy_prob(0)
-            greedy_actions = []
-            states = range(1, 100)
-            for i in range(1, 100):
-                env.state = i
-                env.update_action_space()
-                actions = env.action_space
-                greedy_actions.append(agent.actor.get_optimal_action(i, process_actions(env, actions)))
-
-            fig, ax = plt.subplots()  # Create a figure containing a single axes.
-            ax.plot(states, greedy_actions, label='Greedy actions')  # Plot some data on the axes.
-            ax.legend()
-            plt.show()
+        fig, ax = plt.subplots()  # Create a figure containing a single axes.
+        ax.plot(states, greedy_actions, label='Greedy actions')  # Plot some data on the axes.
+        ax.legend()
+        plt.show()
 
     env.close()
     return steps

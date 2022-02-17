@@ -116,7 +116,30 @@ class Hanoi(gym.Env):
         return self.current_state
 
     def render(self, mode='human', close=False):
-        rows = []
+        print_state = []
+        for disc_ in range(self.num_disks):
+            print_state.append([]) # row
+            for peg_ in range(self.num_pegs):
+                print_state[disc_].append('    |    ')
+        pegs = []
+        for peg in range(self.num_disks):
+            pegs.append(self.disks_on_peg(peg))
+        for i in range(len(pegs)):
+            discs = pegs[i]
+            for j in range(len(discs)):
+                if discs[j] == 0: print_shape =   '    *    '
+                elif discs[j] == 1: print_shape = '   **    '
+                elif discs[j] == 2: print_shape = '   ***   '
+                elif discs[j] == 3: print_shape = '  ****   '
+                elif discs[j] == 4: print_shape = '  *****  '
+                elif discs[j] == 5: print_shape = ' ******  '
+                else: print_shape = '   E   '
+                print_state[j][i] = print_shape
+
+        # print_state = reversed(print_state)
+        for row in print_state:
+            print(row)
+        print('\n')
         # for i in range(self.num_disks):
         #     rows.append([])
         # for j in range(self.num_disks):
