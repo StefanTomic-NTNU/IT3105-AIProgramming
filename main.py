@@ -156,7 +156,7 @@ def run(seed):
 
             if display and i_episode == nr_episodes - 1:
                 agent.actor.set_not_greedy_prob(0)
-                # env.render()
+                env.render()
 
             observation, reward, done, info = env.step(chosen_action)
 
@@ -206,11 +206,11 @@ def run(seed):
 
         scores.append(sum_reward)
         step_list.append(steps_episode)
-        # print(f'Episode: {i_episode}')
+        print(f'Episode: {i_episode}')
         # print(state_history)
         # print(f'Final state: {new_state}')
         # print(f'Final score: {sum_reward}')
-        # print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
+        print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
         # print(f'Policy size: {len(agent.actor.get_policy())}')
         # print(f'Eval size: {len(agent.critic.get_eval())}')
 

@@ -1,5 +1,5 @@
 {
-  "nr_episodes":                200,
+  "nr_episodes":                300,
   "max_steps":                  300,
   "critic_type":                "table",
   "nn_dims":                    [1024, 512],
@@ -15,7 +15,7 @@
   "frame_delay":                1,
 
   "pole_length":                1.0,
-  "pole_mass":                  0.1,
+  "pole_mass":                  0.3,
   "gravity":                    9.8,
   "timestep":                   0.02,
 
