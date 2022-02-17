@@ -22,14 +22,7 @@ class Actor:
 
     def get_optimal_action(self, state, actions):
         """ Picks action greedily """
-        # optimal_action = random.choice(actions)
-        # TODO: Change to just performed saps
-        # self.add_saps_to_current_episode(state, actions)
-        # for action in actions:
-        #     if self.__policy[(state, action)] > self.__policy[(state, optimal_action)]:
-        #         optimal_action = action
         return max(actions, key=lambda a: self.__policy[(state, a)])    # argmax
-        # return optimal_action
 
     def update_chosen_action(self, state, actions):
         """
@@ -38,20 +31,12 @@ class Actor:
         :param actions: a
         :return:
         """
-        # TODO: Change to just performed saps
-        # self.add_saps_to_current_episode(state, actions)
         self.init_policy(state, actions)
 
-        # self.update_elig(state, self.__chosen_action)   # ACTOR: e(s,a) ← 1 (the actor keeps SAP-based eligibilities)
         if random.uniform(0, 1) < 1 - self.__not_greedy_prob:
             self.__chosen_action = self.get_optimal_action(state, actions)
         else:
             self.__chosen_action = random.choice(actions)
-
-    # def add_saps_to_current_episode(self, state, actions):
-    #     for action in actions:
-    #         if (state, action) not in self.__sap_current_episode:
-    #             self.__sap_current_episode.append((state, action))
 
     def init_policy(self, state, actions):
         """
@@ -61,7 +46,6 @@ class Actor:
         for action in actions:
             if (state, action) not in self.__policy:
                 self.__policy[(state, action)] = 0
-                # self.update_elig(state, action)
 
     def update_policies(self, delta):
         """
@@ -82,7 +66,6 @@ class Actor:
         """
         if (state, action) not in self.__policy:
             self.__policy[(state, action)] = 0
-        # print(type(delta))
         self.__policy[(state, action)] += self.__learning_rate * delta * self.__elig[(state, action)]
 
     def update_elig(self, state, action):

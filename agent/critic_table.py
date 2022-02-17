@@ -1,4 +1,3 @@
-import copy
 import random
 
 import agent.critic
@@ -40,8 +39,6 @@ class CriticTable(agent.critic.Critic):
         :param state:   s
         :return:
         """
-        # self.update_elig(state)
-        # self.init_eval(state)
         self.__eval[state] = self.__eval[state] + \
                              self.__learning_rate * \
                              self.__td_error * \
@@ -55,13 +52,6 @@ class CriticTable(agent.critic.Critic):
         :param reward:      rewards received from state transition
         :return:
         """
-        # self.update_elig(prev_state)
-        # self.update_elig(new_state)
-        # self.init_eval(prev_state)
-        # self.init_eval(new_state)
-        # if done:
-        #     self.update_elig(new_state)
-        #     print('done')
         self.__td_error = reward + self.__discount_factor * self.__eval[new_state] * (1-int(done)) - self.__eval[prev_state]
 
     def get_td_error(self):

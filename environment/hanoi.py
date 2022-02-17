@@ -1,15 +1,9 @@
-# Code taken from https://github.com/RobertTLange/gym-hanoi
+# Code based on OpenAI Gym https://github.com/RobertTLange/gym-hanoi
 import warnings
 
-import environment.environment
 
 import gym
-from gym import error, spaces, utils
-from gym.utils import seeding
-
-import random
-import itertools
-import numpy as np
+from gym import spaces
 
 
 class Hanoi(gym.Env):
@@ -136,14 +130,9 @@ class Hanoi(gym.Env):
                 else: print_shape = '   E   '
                 print_state[j][i] = print_shape
 
-        # print_state = reversed(print_state)
         for row in print_state:
             print(row)
         print('\n')
-        # for i in range(self.num_disks):
-        #     rows.append([])
-        # for j in range(self.num_disks):
-        #     rows[j][self.current_state[j]] = '*'
         return
 
     def set_env_parameters(self, num_disks=4, env_noise=0, verbose=True):

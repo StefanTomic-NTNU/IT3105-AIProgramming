@@ -1,4 +1,4 @@
-# Code taken from https://github.com/openai/gym/blob/master/gym/envs/classic_control/cartpole.py
+# Code based on OpenAI Gym https://github.com/openai/gym/blob/master/gym/envs/classic_control/cartpole.py
 """
 Classic cart-pole system implemented by Rich Sutton et al.
 Copied from http://incompleteideas.net/sutton/book/code/pole.c

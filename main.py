@@ -6,21 +6,15 @@ from time import sleep
 
 import numpy as np
 
-import gym
-
 import matplotlib.pyplot as plt
 from gym.spaces import Discrete
-from gym.utils import seeding
 
 from environment.cartpole import CartPoleEnv
-from environment.pole import Pole
 from environment.gambler import Gambler
 from environment.hanoi import Hanoi
 import tensorflow as tf
 
 from agent.agent import Agent
-
-import gym
 
 
 def read_config():
@@ -31,7 +25,7 @@ def read_config():
 
 seed_ = 136
 tf.random.set_seed(seed_+6)
-# +5 ok
+
 
 pos_bins = 7
 cart_vel_bins = 7
@@ -73,15 +67,6 @@ def process_actions(env_, actions):
 
 
 def run(seed):
-    scores = []
-    deltas = []
-    sum_eval = []
-    sum_policies = []
-    len_eval = []
-    sum_eligs_critic = []
-    sum_eligs_actor = []
-    len_curr_ep_crit = []
-    len_curr_ep_actor = []
     step_list = []
     actions = []
     wagers = []
@@ -92,7 +77,6 @@ def run(seed):
 
     config = read_config()
 
-    # env = Pole()
     env = CartPoleEnv(pole_length=config['pole_length'],
                       pole_mass=config['pole_mass'],
                       gravity=config['gravity'],
@@ -141,10 +125,6 @@ def run(seed):
 
         observation = env.reset()
 
-        # Initialize: s ← s_init; a ← Π(s_init)
-        # new_state = copy.copy(observation)
-        # new_actions = process_actions(env, env.action_space)
-
         prev_state = process_state(observation, done)
         prev_actions = process_actions(env, env.action_space)
 
@@ -168,25 +148,10 @@ def run(seed):
 
             new_state = process_state(observation, done)
             state_history.append(new_state)
-            # print(new_state)
             new_actions = process_actions(env, env.action_space)
 
-            # print(f'Prev state: {prev_state}')
-            # print(f'Prev actions: {prev_actions}')
-            # print(f'Chosen action: {chosen_action}')
-            # print(f'New state: {new_state}')
-            # print(f'New actions: {new_actions}\n')
-
-            # Plotting shit
             steps += 1
             steps_episode += 1
-            # deltas.append(copy.copy(agent.critic.get_delta()))
-            # sum_eval.append(copy.copy(agent.critic.get_sum_eval()))
-            # sum_policies.append(copy.copy(agent.actor.get_sum_policy()))
-            # sum_eligs_critic.append(copy.copy(agent.critic.get_sum_elig()))
-            # sum_eligs_actor.append(copy.copy(agent.actor.get_sum_elig()))
-            # len_curr_ep_crit.append(copy.copy(agent.critic.get_size_current_episode()))
-            # len_curr_ep_actor.append(copy.copy(agent.actor.get_size_current_episode()))
             actions.append(chosen_action)
             if isinstance(env, Gambler):
                 wagers[prev_state].append(chosen_action)
@@ -202,24 +167,16 @@ def run(seed):
             agent.learn(prev_state, prev_actions, chosen_action, reward, new_state, new_actions, done)
 
             if done:
-                # print("Episode finished after {} timesteps, with reward {}".format(t + 1, sum_reward))
                 break
 
             prev_state = copy.copy(new_state)
             prev_actions = copy.copy(new_actions)
 
-        scores.append(sum_reward)
         step_list.append(steps_episode)
         print(f'Episode: {i_episode}')
         print(state_history)
-        # print(f'Final state: {new_state}')
         print(f'Final score: {sum_reward}')
         print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
-        # print(f'Policy size: {len(agent.actor.get_policy())}')
-        # print(f'Eval size: {len(agent.critic.get_eval())}')
-
-        # all_state_history.append(copy.copy(state_history))
-        # len_eval.append(len(agent.critic.get_eval()))
         state_history.clear()
 
     episodes = [*range(nr_episodes)]
@@ -249,16 +206,4 @@ def run(seed):
     return steps
 
 
-results = []
-
-# for i in range(100, 200):
-#     print(f'Seed {i}\n\n')
-#     results.append(run(i))
-
-
-results.append(run(seed_))
-
-print(results)
-# print(f'Max: {max(results)}')
-# print(f'Index of Max: {results.index(max(results))}')
-
+run(seed_)

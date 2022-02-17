@@ -1,7 +1,6 @@
 from agent.actor import Actor
 from agent.critic_nn import CriticNN
 from agent.critic_table import CriticTable
-import json
 
 
 class Agent:
