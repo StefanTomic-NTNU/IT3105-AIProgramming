@@ -2,6 +2,7 @@ import copy
 import json
 import random
 import statistics
+from time import sleep
 
 import numpy as np
 
@@ -92,14 +93,14 @@ def run(seed):
     config = read_config()
 
     # env = Pole()
+    env = Gambler(win_prob=config['win_prob'])
+    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
     env = CartPoleEnv(pole_length=config['pole_length'],
                       pole_mass=config['pole_mass'],
                       gravity=config['gravity'],
                       timestep=config['timestep']
                       )
     env.seed(seed)
-    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
-    env = Gambler(win_prob=config['win_prob'])
 
     state_size = None
     if isinstance(env, Gambler):
@@ -159,6 +160,7 @@ def run(seed):
             if display and i_episode == nr_episodes - 1:
                 agent.actor.set_not_greedy_prob(0)
                 env.render()
+                sleep(config['frame_delay'])
 
             observation, reward, done, info = env.step(chosen_action)
 
@@ -211,7 +213,7 @@ def run(seed):
         print(f'Episode: {i_episode}')
         # print(state_history)
         # print(f'Final state: {new_state}')
-        # print(f'Final score: {sum_reward}')
+        print(f'Final score: {sum_reward}')
         print(f'Epsilon: {agent.actor.get_not_greedy_prob()}')
         # print(f'Policy size: {len(agent.actor.get_policy())}')
         # print(f'Eval size: {len(agent.critic.get_eval())}')

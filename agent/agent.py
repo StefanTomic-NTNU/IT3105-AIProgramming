@@ -38,13 +38,7 @@ class Agent:
         else:
             raise Exception('Critic must be of type "table" or "nn"')
 
-    # def initialize(self, init_state, init_actions):
-    #     self.critic.init_eval(init_state)
-    #     self.actor.init_policy(init_state, init_actions)
-
     def learn(self, prev_state, prev_actions, chosen_action, reward, new_state, new_actions, done):
-        # print(prev_state)
-        # print(new_state)
 
         self.critic.init_eval(prev_state)
         self.critic.init_eval(new_state)

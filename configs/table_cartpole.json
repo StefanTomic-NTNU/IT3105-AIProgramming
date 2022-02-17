@@ -12,7 +12,7 @@
   "init_not_greedy_prob":       0.50,
   "not_greedy_prob_decay_fact": 0.98,
   "display":                    1,
-  "frame_delay":                1,
+  "frame_delay":                0.02,
 
   "pole_length":                1.0,
   "pole_mass":                  0.3,
