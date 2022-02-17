@@ -8,7 +8,8 @@ from agent.critic import Critic
 
 
 class CriticNN(Critic):
-    def __init__(self, layers, learning_rate=0.003, discount_factor=0.91, name='actor_critic',
+    def __init__(self, layers, learning_rate=0.003, discount_factor=0.91,
+                 name='actor_critic',
                  chkpt_dir='tmp/actor_critic'):
         super().__init__()
         self.layers = layers

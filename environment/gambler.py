@@ -35,7 +35,7 @@ class Gambler(environment.environment.Environment):
             self.__done = True
             self.__reward = 50
         else:
-            self.__reward = -1
+            self.__reward = 0
 
         self.update_action_space()
 

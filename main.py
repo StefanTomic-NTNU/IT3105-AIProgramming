@@ -29,8 +29,8 @@ def read_config():
 
 
 seed_ = 136
-tf.random.set_seed(seed_)
-
+tf.random.set_seed(seed_+6)
+# +5 ok
 
 pos_bins = 7
 cart_vel_bins = 7
