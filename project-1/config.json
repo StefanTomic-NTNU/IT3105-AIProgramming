@@ -1,5 +1,5 @@
 {
-    "problem":                  "cartpole",
+  "problem":                  "cartpole",
 
   "nr_episodes":                300,
   "max_steps":                  300,

@@ -1,7 +1,5 @@
 import copy
 import json
-import random
-import statistics
 from time import sleep
 
 import numpy as np
