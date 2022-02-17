@@ -15,6 +15,7 @@ from environment.cartpole import CartPoleEnv
 from environment.pole import Pole
 from environment.gambler import Gambler
 from environment.hanoi import Hanoi
+import tensorflow as tf
 
 from agent.agent import Agent
 
@@ -27,7 +28,8 @@ def read_config():
     return config_
 
 
-seed_ = 126
+seed_ = 136
+tf.random.set_seed(seed_)
 
 
 pos_bins = 7
@@ -315,7 +317,7 @@ results = []
 #     results.append(run(i))
 
 
-results.append(run(136))
+results.append(run(seed_))
 
 print(results)
 # print(f'Max: {max(results)}')

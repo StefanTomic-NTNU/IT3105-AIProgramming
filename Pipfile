@@ -8,6 +8,7 @@ gym = "*"
 matplotlib = "*"
 tensorflow = "*"
 keras = "*"
+tf = "*"
 
 [dev-packages]
 
