@@ -76,15 +76,20 @@ def run(seed):
         wagers.append([])
 
     config = read_config()
+    problem = config['problem']
 
-    env = CartPoleEnv(pole_length=config['pole_length'],
-                      pole_mass=config['pole_mass'],
-                      gravity=config['gravity'],
-                      timestep=config['timestep']
-                      )
-    env.seed(seed)
-    env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
-    env = Gambler(win_prob=config['win_prob'])
+    env = None
+    if problem == 'hanoi':
+        env = Hanoi(nr_pegs=config['nr_pegs'], nr_discs=config['nr_discs'])
+    if problem == 'cartpole':
+        env = CartPoleEnv(pole_length=config['pole_length'],
+                          pole_mass=config['pole_mass'],
+                          gravity=config['gravity'],
+                          timestep=config['timestep']
+                          )
+        env.seed(seed)
+    if problem == 'gambler':
+        env = Gambler(win_prob=config['win_prob'])
 
     state_size = None
     if isinstance(env, Gambler):

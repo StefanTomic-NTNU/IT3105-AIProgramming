@@ -1,4 +1,6 @@
 {
+  "problem":                    "hanoi",
+
   "nr_episodes":                100,
   "max_steps":                  200,
   "critic_type":                "nn",

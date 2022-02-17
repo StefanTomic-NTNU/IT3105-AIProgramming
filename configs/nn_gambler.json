@@ -1,4 +1,6 @@
 {
+  "problem":                    "gambler",
+
   "nr_episodes":                125,
   "max_steps":                  100,
   "critic_type":                "nn",

@@ -1,4 +1,6 @@
 {
+    "problem":                  "cartpole",
+
   "nr_episodes":                300,
   "max_steps":                  300,
   "critic_type":                "table",

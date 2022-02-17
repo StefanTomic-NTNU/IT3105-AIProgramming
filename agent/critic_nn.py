@@ -15,10 +15,10 @@ class CriticNN(Critic):
         self.layers = layers
         self.__learning_rate = learning_rate        # alpha
         self.__discount_factor = discount_factor    # gamma
+        self.__td_error = 0                         # delta
         self.__eval_model = self.compile_model(self.layers)
-        self.__td_error = 0.00
 
-        # variables not in use
+        # variables used for checkpointing. Currently not in use.
         self.model_name = name
         self.checkpoint_dir = chkpt_dir
         self.checkpoint_file = os.path.join(self.checkpoint_dir, name + '_ac')
@@ -31,8 +31,10 @@ class CriticNN(Critic):
         :param reward:      reward from state transition
         :param done:        done flag
         """
-        prev_state = tf.convert_to_tensor(tuple_to_np_array(prev_state))
-        new_state = tf.convert_to_tensor(tuple_to_np_array(new_state))
+        np_prev_state = tuple_to_np_array(prev_state)
+        np_new_state = tuple_to_np_array(new_state)
+        prev_state = tf.convert_to_tensor(np_prev_state)
+        new_state = tf.convert_to_tensor(np_new_state)
         with tf.GradientTape() as tape:
             loss, td_error_tensor = get_loss(
                 reward +
