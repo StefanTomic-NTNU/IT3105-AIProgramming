@@ -33,7 +33,7 @@ class Hex:
 
         print_list = []
 
-        for row in range(self.size * 3 + 1):
+        for row in range(self.size * 4 - 3):
             print_list.append('')
 
         for i in range(len(print_list)):
@@ -43,15 +43,19 @@ class Hex:
         for r in range(self.size):
             for c in range(self.size):
                 print_index = (r + c) * 2
-                print(print_index)
 
                 if '*' in print_list[print_index]:
                     print_list[print_index] += '----- * '
                 else:
                     print_list[print_index] += ' * '
 
-
-
+        for r in range(len(print_list)):
+            if r % 2 == 1:
+                if r > len(print_list) / 2:
+                    print_list[r] += '   \\   /' * (round((len(print_list) - r)/2))
+                else:
+                    print_list[r] = print_list[r][:-1]
+                    print_list[r] += '/   \\   ' * round((r+1) / 2)
         for row in print_list:
             print(row)
 
