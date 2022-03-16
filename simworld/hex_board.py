@@ -39,7 +39,7 @@ class Hex:
         for i in range(len(print_list)):
             print_list[i] += '  ' * (abs(round(len(print_list)/2 - i)))
 
-        print(f'Print List length: {len(print_list)}')
+        # print(f'Print List length: {len(print_list)}')
         for r in range(self.size):
             for c in range(self.size):
                 print_index = (r + c) * 2
@@ -73,5 +73,5 @@ class Hex:
 
 
 if __name__ == '__main__':
-    hex_board = Hex(4)
+    hex_board = Hex(5)
     hex_board.render()

@@ -33,3 +33,9 @@ class Nim:
             game_over = 'Game is not over'
         print(f'Pieces left: {self.n} \t\t Player to move: {self.player} \t\t {game_over} \t\t '
               f'Legal actions: {self.get_legal_actions()} ')
+
+    def get_state(self):
+        return self.player, self.n
+
+    def create_copy(self):
+        return Nim(self.n, self.k, init_player=self.player)
