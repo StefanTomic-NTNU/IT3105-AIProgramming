@@ -8,7 +8,7 @@ class Nim:
                       }
         self.k = k  # max num pieces taken
 
-    def step(self, action):
+    def make_move(self, action):
         if self.is_game_over():
             print('Game is over')
             return
@@ -38,10 +38,48 @@ class Nim:
         return Nim(self.state['board_state'], self.k, init_player=self.state['pid'])
 
     def generate_children(self):
+        edges = []
         children = []
         actions = self.get_legal_actions()
         for action in actions:
             dummy_game = self.create_copy()
-            dummy_game.step(action)
-            children.append(dummy_game)
-        return children
+            dummy_game.make_move(action)
+            edges.append(action)
+            children.append(dummy_game.state)
+        return edges, children
+
+    def step_(self, state, action):
+        if self.is_game_over_(state):
+            print('Game is over')
+            return
+        new_state = {
+            'board_state': state['board_state'],
+            'pid': state['pid']
+                      }
+        if action > self.k:
+            raise Exception(f'Cannot take {action} pieces, when {self.k} is the max')
+        if action > state['board_state']:
+            new_state['board_state'] = 0
+        else:
+            new_state['board_state'] -= action
+        new_state['pid'] = 3 - state['pid']
+        return new_state
+
+    def is_game_over_(self, state):
+        return state['board_state'] <= 0
+
+    def get_legal_actions_(self, state):
+        return tuple(list(range(1, state['board_state']+1))) if self.k > state['board_state'] else tuple(list(range(1, self.k+1)))
+
+    def render_(self, state):
+        if self.is_game_over_(state):
+            game_over = 'Game is over'
+        else:
+            game_over = 'Game is not over'
+        print(f'Pieces left: {state["board_state"]} \t\t Player to move: {state["pid"]} \t\t {game_over} \t\t '
+              f'Legal actions: {self.get_legal_actions_(state)} ')
+
+    def generate_children_(self, state):
+        edges = [action for action in self.get_legal_actions_(state)]
+        children = [self.step_(state, action) for action in edges]
+        return edges, children

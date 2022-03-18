@@ -2,38 +2,71 @@ from simworld.nim import Nim
 
 
 class TreeNode:
-    def __init__(self, sim: Nim):
+    def __init__(self, state: dict):
         self.parent = None
-        self.children = set()
-        self.sim = sim
+        self.edges = []
+        self.children = []
+        self.state = state
         self.score = 0
         self.N = 0
-
-    def add_child(self, child):
-        self.children.add(child)
-        child.parent = self
-
-    def generate_children(self):
-        children = self.sim.generate_children()
-        for child in children:
-            self.add_child(TreeNode(child))
-
+        self.Q = 0
 
 
 class MCTS:
-    def __init__(self, number_actual_games, number_search_games):
+    def __init__(self, number_actual_games, number_search_games, game: Nim):
         self.number_actual_games = number_actual_games
         self.number_search_games = number_search_games
-        self.board = Nim(50, 10)
+        self.game = game
 
     def run(self):
         for g_a in range(self.number_actual_games):
-            board_a = Nim(50, 10)
-            # state = self.board.get_state()
-            root = TreeNode(board_a)
+            board_a = self.game
+            init_state = board_a.state
+            root = TreeNode(init_state)
             while not board_a.is_game_over():
-                board_mc = board_a.create_copy()
-                board_mc_node = TreeNode(board_mc)
-                for g_s in range(self.number_search_games):
-                    board_mc_node.generate_children()
+                board_mc = self.game
+                board_mc.state = root.state
 
+                for g_s in range(self.number_search_games):
+                    node = root
+                    while len(node.children) != 0:
+                        traversing_node = node.children[0] # TODO: Replace tree policy
+                        node = traversing_node
+                        board_mc.state = traversing_node.state
+                    node.generate_children()
+                    # Rollout:
+                    rollout_nodes = []
+                    origin = node
+                    while not board_mc.is_game_over():
+                        node.generate_children()
+                        # TODO: Select action using ANET
+                        board_mc.make_move(node.edges[0])
+                        node = TreeNode(board_mc.state)
+                    if board_mc.state['pid'] == 1:
+                        eval = -1
+                    else:
+                        eval = 1
+                    node = origin
+                    parent = node.parent
+                    while parent:
+                        node.score += eval
+                        node.N += 1
+                        node.Q = node.score / node.N
+                        parent = node.parent
+                # TODO: Get D   ;)
+                action = root.edges[0]  # TODO: Choose action based on D
+                board_a.make_move(action)
+                root = root.children[0]
+                root.parent = None
+
+    def generate_children(self, tree_node: TreeNode):
+        edges, states = self.game.generate_children_(tree_node.state)
+        children = [TreeNode(child) for child in states]
+        for i in range(len(children)):
+            self.add_child(tree_node, children[i], edges[i])
+
+    def add_child(self, parent, child, edge):
+        if child not in parent.children:
+            parent.children.append(child)
+            parent.edges.append(edge)
+            child.parent = parent
