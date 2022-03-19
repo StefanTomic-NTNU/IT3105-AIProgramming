@@ -30,23 +30,24 @@ class MCTS:
                 for g_s in range(self.number_search_games):
                     node = root
                     while len(node.children) != 0:
-                        traversing_node = node.children[0] # TODO: Replace tree policy
+                        traversing_node = node.children[0]  # TODO: Replace tree policy
                         node = traversing_node
                         board_mc.state = traversing_node.state
-                    node.generate_children()
+                    self.generate_children(node)
                     # Rollout:
                     rollout_nodes = []
-                    origin = node
+                    # origin = TreeNode(node.state)
                     while not board_mc.is_game_over():
-                        node.generate_children()
+                        self.generate_children(node)
                         # TODO: Select action using ANET
                         board_mc.make_move(node.edges[0])
                         node = TreeNode(board_mc.state)
+                        rollout_nodes.append(node)
                     if board_mc.state['pid'] == 1:
                         eval = -1
                     else:
                         eval = 1
-                    node = origin
+                    node = rollout_nodes[0]
                     parent = node.parent
                     while parent:
                         node.score += eval
