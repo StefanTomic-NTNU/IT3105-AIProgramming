@@ -26,6 +26,9 @@ class Nim:
     def get_legal_actions(self):
         return tuple(list(range(1, self.state['board_state']+1))) if self.k > self.state['board_state'] else tuple(list(range(1, self.k+1)))
 
+    def is_action_legal(self, action):
+        return self.k >= action > 0 and action <= self.state['board_state']
+
     def render(self):
         if self.is_game_over():
             game_over = 'Game is over'

@@ -53,21 +53,32 @@ class MCTS:
                         # TODO: Select action using ANET
                         chosen_action = random.randrange(len(node.edges))
                         nn_input = np.array([node.state['board_state'], node.state['pid']])
-                        input_tensor = tf.convert_to_tensor(nn_input, dtype=tf.int32)
-                        print(input_tensor)
-                        action_tensor = self.model.call(input_tensor)
+                        # input_tensor = tf.convert_to_tensor(nn_input, dtype=tf.int32)
+                        nn_input = nn_input.reshape(1, -1)
+                        print(f'Input: {nn_input}')
+                        action_tensor = self.model(nn_input)
                         print(action_tensor)
-                        chosen_action = tf.math.argmax(action_tensor, axis=1)
-                        chosen_action = chosen_action.numpy()[0]
-                        print(chosen_action)
-                        board_mc.make_move(node.edges[chosen_action])
-                        node = node.children[chosen_action]
+                        # chosen_action = tf.math.argmax(action_tensor, axis=1)
+                        actions = action_tensor.numpy()[0]
+                        action_index = np.argmax(actions)
+                        while action_index >= len(node.edges):
+                            actions[action_index] = 0
+                            action_index = np.argmax(actions)
+                        action = node.edges[action_index]
+                        while not self.game.is_action_legal(action):
+                            actions[action_index] = 0
+                            action_index = np.argmax(actions)
+                            action = node.edges[action_index]
+                        print(action)
+                        board_mc.make_move(action)
+                        node = node.children[action_index]
                         rollout_nodes.append(node)
                     if board_mc.state['pid'] == 1:
                         eval = -1
                     else:
                         eval = 1
-                    node = rollout_nodes[0]
+                    if len(rollout_nodes) > 0:
+                        node = rollout_nodes[0]
                     parent = node.parent
                     while parent:
                         # print('parent')
@@ -80,12 +91,11 @@ class MCTS:
                         node.parent.Q_a[edge_index] = node.parent.score_a[edge_index] / node.parent.N_a[edge_index]
                         node = node.parent
                         parent = node.parent
-                # TODO: Get D   ;)
                 root_state = (root.state['board_state'], root.state['pid'])
                 D = copy.copy(root.N_a)
                 case = (root_state, D)
                 self.replay_buffer.append(case)
-                self.model.call(case)
+                self.model(case)
                 action = root.edges[0]  # TODO: Choose action based on D
                 board_a.make_move(action)
                 root = root.children[0]
@@ -93,6 +103,7 @@ class MCTS:
             batch_size = len(self.replay_buffer)
             number_from_batch = random.randrange(round(batch_size/5), batch_size)
             subbatch = random.sample(self.replay_buffer, number_from_batch)
+            # TODO: Train using vector of vectors:
             for minibatch in subbatch:
                 self.model.fit(x=minibatch[0], y=minibatch[1])
 
@@ -117,43 +128,15 @@ class MCTS:
         combined = np.add(u, node.Q_a)
         return np.argmax(combined)
 
-    def gennet(self, num_classes=3, lrate=0.01, optimizer='SGD', loss='categorical_crossentropy', in_shape=(1,)):
+    def gennet(self, num_classes=3, lrate=0.01, optimizer='SGD', loss='categorical_crossentropy', in_shape=(2,)):
         optimizer = eval('KER.optimizers.' + optimizer)
         loss = eval('KER.losses.' + loss) if type(loss) == str else loss
-        input_layer = KER.layers.Input(shape=in_shape, name='input_layer')
-        x = input_layer
-        x = KER.layers.Dense(30, activation='relu')(x)
-        x = KER.layers.Dense(15, activation='relu')(x)
-        output_layer = KER.layers.Dense(3, activation='softmax')(x)
-        model = KER.models.Model(input_layer, output_layer)
-        model = KER.Sequential()
 
-        model.add(KER.layers.Dense(2, input_shape=(1,), activation='relu', name='input_layer'))
-        model.add(KER.layers.Dense(12, activation='relu', name='middle_layer'))
-        model.add(KER.layers.Dense(3, activation='softmax', name='output_layer'))
+        model = KER.Sequential()
+        model.add(KER.layers.Dense(2, input_shape=in_shape, activation='relu', name='input_layer'))
+        model.add(KER.layers.Dense(64, activation='relu', name='middle_layer1'))
+        model.add(KER.layers.Dense(32, activation='relu', name='middle_layer2'))
+        model.add(KER.layers.Dense(num_classes, activation='softmax', name='output_layer'))
 
         model.compile(optimizer=optimizer(learning_rate=lrate), loss=loss, metrics=[KER.metrics.categorical_accuracy])
         return model
-
-    def update_td_error(self, prev_state, new_state, reward, done):
-        prev_state = tf.convert_to_tensor(tuple_to_np_array(prev_state))
-        new_state = tf.convert_to_tensor(tuple_to_np_array(new_state))
-        with tf.GradientTape() as tape:
-            loss, td_error_tensor = get_loss(
-                reward +
-                self.model(new_state),
-                self.model(prev_state)
-            )
-        gradients = tape.gradient(loss, self.model.trainable_variables)
-        self.model.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
-        # self.__td_error = tf.keras.backend.eval(td_error_tensor)[0][0]
-
-
-@tf.function
-def get_loss(true_target, predicted_target):
-    td_error_tensor = true_target - predicted_target
-    loss = td_error_tensor**2
-    return loss, td_error_tensor
-
-
-def tuple_to_np_array(tup): return np.array(np.asarray(tup).flatten().reshape(1, -1))
