@@ -1,4 +1,5 @@
 import copy
+import math
 import random
 import numpy as np
 import tensorflow as tf
@@ -32,10 +33,10 @@ class MCTS:
 
     def run(self):
         for g_a in range(self.number_actual_games):
-            board_a = self.game
+            board_a = self.game.create_copy()
             root = TreeNode(copy.copy(board_a.state))
             while not board_a.is_game_over():
-                board_mc = self.game
+                board_mc = self.game.create_copy()
                 board_mc.state = copy.copy(root.state)
 
                 for g_s in range(self.number_search_games):
@@ -55,21 +56,8 @@ class MCTS:
                         nn_input = np.array([node.state['board_state'], node.state['pid']])
                         # input_tensor = tf.convert_to_tensor(nn_input, dtype=tf.int32)
                         nn_input = nn_input.reshape(1, -1)
-                        print(f'Input: {nn_input}')
-                        action_tensor = self.model(nn_input)
-                        print(action_tensor)
-                        # chosen_action = tf.math.argmax(action_tensor, axis=1)
-                        actions = action_tensor.numpy()[0]
-                        action_index = np.argmax(actions)
-                        while action_index >= len(node.edges):
-                            actions[action_index] = 0
-                            action_index = np.argmax(actions)
-                        action = node.edges[action_index]
-                        while not self.game.is_action_legal(action):
-                            actions[action_index] = 0
-                            action_index = np.argmax(actions)
-                            action = node.edges[action_index]
-                        print(action)
+                        # print(f'Input: {nn_input}')
+                        action, action_index = self.pick_action(nn_input, node)
                         board_mc.make_move(action)
                         node = node.children[action_index]
                         rollout_nodes.append(node)
@@ -91,20 +79,28 @@ class MCTS:
                         node.parent.Q_a[edge_index] = node.parent.score_a[edge_index] / node.parent.N_a[edge_index]
                         node = node.parent
                         parent = node.parent
-                root_state = (root.state['board_state'], root.state['pid'])
-                D = copy.copy(root.N_a)
+                root_state = np.array([root.state['board_state'], root.state['pid']])
+                root_state = root_state.reshape(1, -1)
+                D = np.array([root.N_a])
                 case = (root_state, D)
                 self.replay_buffer.append(case)
-                self.model(case)
-                action = root.edges[0]  # TODO: Choose action based on D
+                # self.model(case[0])
+                action, action_index = self.pick_action(case[0], root)
+                # action = root.edges[0]  # TODO: Choose action based on D
                 board_a.make_move(action)
-                root = root.children[0]
+                root = root.children[action_index]
                 root.parent = None
-            batch_size = len(self.replay_buffer)
-            number_from_batch = random.randrange(round(batch_size/5), batch_size)
+            batch_size = len(self.replay_buffer[0])
+            number_from_batch = random.randrange(math.ceil(batch_size/5), batch_size)
             subbatch = random.sample(self.replay_buffer, number_from_batch)
+
             # TODO: Train using vector of vectors:
+            print(f'RBUF: {self.replay_buffer}')
+            print(f'Number for subbatch: {number_from_batch}')
+            print(f'Subbatch: {subbatch}')
+
             for minibatch in subbatch:
+                print(minibatch)
                 self.model.fit(x=minibatch[0], y=minibatch[1])
 
     def generate_children(self, tree_node: TreeNode):
@@ -122,6 +118,19 @@ class MCTS:
             parent.score_a.append(0)
             parent.Q_a.append(0)
             child.parent = parent
+
+    def pick_action(self, state, node):
+        action_tensor = self.model(state)
+        # print(action_tensor)
+        # chosen_action = tf.math.argmax(action_tensor, axis=1)
+        actions = action_tensor.numpy()[0]
+        action_index = np.argmax(actions)
+        while action_index >= len(node.edges):
+            actions[action_index] = 0
+            action_index = np.argmax(actions)
+        action = node.edges[action_index]
+        # print(action)
+        return action, action_index
 
     def tree_policy(self, node: TreeNode):
         u = [1*np.sqrt(np.log(node.N)/(1 + N_sa)) for N_sa in node.N_a]
