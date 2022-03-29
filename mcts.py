@@ -106,7 +106,7 @@ class MCTS:
                 board_a.make_move(action)
                 root = root.children[action_index]
                 root.parent = None
-            batch_size = len(self.replay_buffer[0])
+            batch_size = len(self.replay_buffer)
             number_from_batch = random.randrange(math.ceil(batch_size/5), batch_size)
             subbatch = random.sample(self.replay_buffer, number_from_batch)
 
@@ -115,9 +115,21 @@ class MCTS:
             print(f'Number for subbatch: {number_from_batch}')
             print(f'Subbatch: {subbatch}')
 
-            for minibatch in subbatch:
-                print(minibatch)
-                self.model.fit(x=minibatch[0], y=minibatch[1])
+            ex_batch_x = subbatch[0][0][0]
+            ex_batch_y = subbatch[0][1][0]
+            batch_x = np.zeros((number_from_batch, len(ex_batch_x)))
+            for i in range(number_from_batch):
+                batch_x[i, :] = subbatch[i][0]
+            batch_y = np.zeros((number_from_batch, len(ex_batch_y)))
+            for i in range(number_from_batch):
+                batch_y[i, :] = subbatch[i][1]
+
+            print(batch_x)
+            print(batch_y)
+            self.model.fit(x=batch_x, y=batch_y)
+            # for minibatch in subbatch:
+            #     print(minibatch)
+            #     self.model.fit(x=minibatch[0], y=minibatch[1])
 
     def generate_children(self, tree_node: TreeNode):
         if len(tree_node.children) == 0 and tree_node.state:
@@ -153,8 +165,6 @@ class MCTS:
         while node.children[action_index].is_illegal:     # TODO: Stuck here??
             action_dist[action_index] = 0
             action_index = np.argmax(action_dist)
-            if action_dist[action_index] == 0:
-                print('shit')
         while action_index >= len(node.edges):
             action_dist[action_index] = 0
             action_index = np.argmax(action_dist)
