@@ -21,6 +21,8 @@ class Nim:
         self.state['pid'] = 3 - self.state['pid']
 
     def is_game_over(self):
+        if self.state is None:
+            return True
         return self.state['board_state'] <= 0
 
     def get_legal_actions(self):
@@ -28,6 +30,9 @@ class Nim:
 
     def is_action_legal(self, action):
         return self.k >= action > 0 and action <= self.state['board_state']
+
+    def get_all_actions(self):
+        return tuple(list(range(1, self.k+1)))
 
     def render(self):
         if self.is_game_over():
@@ -42,14 +47,21 @@ class Nim:
 
     def generate_children(self):
         edges = []
+        illegal_edges = []
         children = []
+        illegal_children = []   # O_o
         actions = self.get_legal_actions()
+        all_actions = self.get_all_actions()
+        illegal_actions = set(actions) ^ set(all_actions)
         for action in actions:
             dummy_game = self.create_copy()
             dummy_game.make_move(action)
             edges.append(action)
             children.append(dummy_game.state)
-        return edges, children
+        for illegal_action in illegal_actions:
+            illegal_edges.append(illegal_action)
+            illegal_children.append(None)
+        return edges, children, illegal_edges, illegal_children
 
     def step_(self, state, action):
         if self.is_game_over_(state):
@@ -74,6 +86,12 @@ class Nim:
     def get_legal_actions_(self, state):
         return tuple(list(range(1, state['board_state']+1))) if self.k > state['board_state'] else tuple(list(range(1, self.k+1)))
 
+    def is_action_legal_(self, state, action):
+        if state is None: return False
+        legal_actions = self.get_legal_actions_(state)
+        print(legal_actions)
+        return action in legal_actions
+
     def render_(self, state):
         if self.is_game_over_(state):
             game_over = 'Game is over'
@@ -84,5 +102,7 @@ class Nim:
 
     def generate_children_(self, state):
         edges = [action for action in self.get_legal_actions_(state)]
+        illegal_edges = list(set(edges) ^ set(self.get_all_actions()))
+        illegal_children = [None for _ in illegal_edges]
         children = [self.step_(state, action) for action in edges]
-        return edges, children
+        return edges, children, illegal_edges, illegal_children
