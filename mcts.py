@@ -1,5 +1,6 @@
 import copy
 import math
+import os
 import random
 import numpy as np
 import tensorflow as tf
@@ -38,6 +39,19 @@ class MCTS:
         self.game = game
         self.model = self.gennet()
         self.replay_buffer = []
+        self.random_prob = 0.50
+        self.random_prob_decay_rate = 0.95
+
+        # Include the epoch in the file name (uses `str.format`)
+        self.checkpoint_path = "models/cp-{epoch:04d}.ckpt"
+        self.checkpoint_dir = os.path.dirname(self.checkpoint_path)
+
+        # Create a callback that saves the model's weights every 5 epochs
+        self.cp_callback = tf.keras.callbacks.ModelCheckpoint(
+            filepath=self.checkpoint_path,
+            verbose=1,
+            save_weights_only=True,
+            save_freq=20)
 
     def run(self):
         for g_a in range(self.number_actual_games):
@@ -71,6 +85,7 @@ class MCTS:
                         nn_input = nn_input.reshape(1, -1)
                         # print(f'Input: {nn_input}')
                         action, action_index = self.pick_action(nn_input, node)
+                        # print(f'Action index: {action_index} \tState: {node.state["board_state"]} \tEdges: {node.edges}')
                         if not board_mc.is_game_over():
                             board_mc.make_move(action)
                             node = node.children[action_index]
@@ -98,7 +113,7 @@ class MCTS:
                         parent = node.parent
                 root_state = np.array([root.state['board_state'], root.state['pid']])
                 root_state = root_state.reshape(1, -1)
-                D = np.array([root.N_a])
+                D = normalize(np.array([root.N_a]))
                 case = (root_state, D)
                 self.replay_buffer.append(case)
                 # self.model(case[0])
@@ -124,12 +139,17 @@ class MCTS:
             for i in range(number_from_batch):
                 batch_y[i, :] = subbatch[i][1]
 
-            print(batch_x)
-            print(batch_y)
-            self.model.fit(x=batch_x, y=batch_y)
+            # for i in range(batch_x.shape[0]):
+            #   print(f'{batch_x[i]} \t => \t {batch_y[i]}')
+            for i in range(len(self.replay_buffer)):
+                print(self.replay_buffer[i])
+
+            self.model.fit(x=batch_x, y=batch_y, callbacks=[self.cp_callback])
+            self.random_prob *= self.random_prob_decay_rate
             # for minibatch in subbatch:
             #     print(minibatch)
             #     self.model.fit(x=minibatch[0], y=minibatch[1])
+        self.model.save_weights(self.checkpoint_path.format(epoch=1337))
 
     def generate_children(self, tree_node: TreeNode):
         if len(tree_node.children) == 0 and tree_node.state:
@@ -156,16 +176,29 @@ class MCTS:
             child.parent = parent
 
     def pick_action(self, state, node):
+        if random.uniform(0, 1) < 1 - self.random_prob:
+            return self.get_greedy_action(state, node)
+        else:
+            illegal_move = True
+            while illegal_move:
+                index = random.randrange(len(node.edges))
+                illegal_move = node.children[index].is_illegal
+            return node.edges[index], index
+
+    def get_greedy_action(self, state, node):
         action_tensor = self.model(state)
         # print(action_tensor)
         # chosen_action = tf.math.argmax(action_tensor, axis=1)
         action_dist = action_tensor.numpy()[0]
+        # print(action_dist)
         # print(f'Actions {action_dist}')
         action_index = np.argmax(action_dist)
-        while node.children[action_index].is_illegal:     # TODO: Stuck here??
+        while node.children[action_index].is_illegal:  # TODO: Normalize dist.
+            # print(action_dist)
             action_dist[action_index] = 0
             action_index = np.argmax(action_dist)
         while action_index >= len(node.edges):
+            # print(action_dist)
             action_dist[action_index] = 0
             action_index = np.argmax(action_dist)
         action = node.edges[action_index]
@@ -179,19 +212,25 @@ class MCTS:
         while node.children[policy].is_at_end():
             combined[policy] = -100000
             policy = np.argmax(combined)
-            if np.sum(combined) == -300000:
+            # print(combined)
+            if np.sum(combined) == -200000:
                 return None
         return policy
 
-    def gennet(self, num_classes=3, lrate=0.01, optimizer='SGD', loss='categorical_crossentropy', in_shape=(2,)):
+    def gennet(self, num_classes=2, lrate=0.0001, optimizer='SGD', loss='categorical_crossentropy', in_shape=(2,)):
         optimizer = eval('KER.optimizers.' + optimizer)
         loss = eval('KER.losses.' + loss) if type(loss) == str else loss
 
         model = KER.Sequential()
         model.add(KER.layers.Dense(2, input_shape=in_shape, activation='relu', name='input_layer'))
-        model.add(KER.layers.Dense(64, activation='relu', name='middle_layer1'))
-        model.add(KER.layers.Dense(32, activation='relu', name='middle_layer2'))
+        model.add(KER.layers.Dense(512, activation='relu', name='middle_layer1'))
+        model.add(KER.layers.Dense(256, activation='relu', name='middle_layer2'))
         model.add(KER.layers.Dense(num_classes, activation='softmax', name='output_layer'))
 
         model.compile(optimizer=optimizer(learning_rate=lrate), loss=loss, metrics=[KER.metrics.categorical_accuracy])
         return model
+
+
+def normalize(arr: np.array):
+    norm = np.linalg.norm(arr)
+    return arr/norm

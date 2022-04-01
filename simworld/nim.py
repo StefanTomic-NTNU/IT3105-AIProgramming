@@ -1,7 +1,14 @@
+import random
+
+
 class Nim:
-    def __init__(self, n, k, init_player=1):
+    def __init__(self, n, k, init_player=None):
+        if init_player is None:
+            init_player = random.randint(1, 2)
+
         if not 0 < init_player <= 2:
             raise Exception(f'Init player must be either 1 or 2, not {init_player}')
+
         self.state = {
             'board_state': n,
             'pid': init_player
