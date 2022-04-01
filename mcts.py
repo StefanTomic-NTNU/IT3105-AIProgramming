@@ -67,15 +67,16 @@ class MCTS:
                         chosen_node = self.tree_policy(node)
                         if chosen_node is None:
                             break
-                        traversing_node = node.children[self.tree_policy(node)]  # TODO: Replace tree policy ?
-                        node = traversing_node
-                        board_mc.state = copy.copy(traversing_node.state)
+                        node = node.children[chosen_node]
+                        print(f'Node: {node.state}')
+                        print(f'Board state: {board_mc.state}')
+                        board_mc.state = copy.copy(node.state)
                         if board_mc.state is None:
                             print('ayo')
                     self.generate_children(node)
-                    # Rollout:
+
+                    # ROLLOUT
                     rollout_nodes = []
-                    # origin = TreeNode(node.state)
                     while node.state and not board_mc.is_game_over():
                         self.generate_children(node)
                         # TODO: Select action using ANET
@@ -87,17 +88,26 @@ class MCTS:
                         action, action_index = self.pick_action(nn_input, node)
                         # print(f'Action index: {action_index} \tState: {node.state["board_state"]} \tEdges: {node.edges}')
                         if not board_mc.is_game_over():
+                            # print(board_mc.state)
                             board_mc.make_move(action)
                             node = node.children[action_index]
                             rollout_nodes.append(node)
                     if board_mc.state is None:
                         print('lol')
+
+                    # BACKPROPAGATION
                     if board_mc.state['pid'] == 1:
                         eval = -1
                     else:
                         eval = 1
                     if len(rollout_nodes) > 0:
-                        node = rollout_nodes[0]
+                        node = rollout_nodes[-1]
+
+                    # print(rollout_nodes)
+                    # for rollout_node in rollout_nodes:
+                    #     del rollout_node
+                    print(rollout_nodes)
+                    # print('\n')
                     parent = node.parent
                     while parent:
                         node.score += eval
@@ -196,10 +206,12 @@ class MCTS:
         while node.children[action_index].is_illegal:  # TODO: Normalize dist.
             # print(action_dist)
             action_dist[action_index] = 0
+            action_dist = normalize(action_dist)
             action_index = np.argmax(action_dist)
         while action_index >= len(node.edges):
             # print(action_dist)
             action_dist[action_index] = 0
+            action_dist = normalize(action_dist)
             action_index = np.argmax(action_dist)
         action = node.edges[action_index]
         # print(action)
@@ -209,6 +221,7 @@ class MCTS:
         u = [1*np.sqrt(np.log(node.N)/(1 + N_sa)) for N_sa in node.N_a]
         combined = np.add(u, node.Q_a)
         policy = np.argmax(combined)
+        # print(f'N_a: {node.N_a} \t u: {u} \t Q_a: {node.Q_a} \t Combined: {combined}')
         while node.children[policy].is_at_end():
             combined[policy] = -100000
             policy = np.argmax(combined)
@@ -222,7 +235,7 @@ class MCTS:
         loss = eval('KER.losses.' + loss) if type(loss) == str else loss
 
         model = KER.Sequential()
-        model.add(KER.layers.Dense(2, input_shape=in_shape, activation='relu', name='input_layer'))
+        model.add(KER.layers.Dense(20, input_shape=in_shape, activation='relu', name='input_layer'))
         model.add(KER.layers.Dense(512, activation='relu', name='middle_layer1'))
         model.add(KER.layers.Dense(256, activation='relu', name='middle_layer2'))
         model.add(KER.layers.Dense(num_classes, activation='softmax', name='output_layer'))
@@ -232,5 +245,4 @@ class MCTS:
 
 
 def normalize(arr: np.array):
-    norm = np.linalg.norm(arr)
-    return arr/norm
+    return arr/np.sum(arr)
