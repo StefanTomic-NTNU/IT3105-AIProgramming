@@ -63,16 +63,22 @@ class MCTS:
 
                 for g_s in range(self.number_search_games):
                     node = root
-                    while not node.is_at_end():
+                    if not node.is_at_end():
                         chosen_node = self.tree_policy(node)
                         if chosen_node is None:
                             break
                         node = node.children[chosen_node]
-                        print(f'Node: {node.state}')
-                        print(f'Board state: {board_mc.state}')
                         board_mc.state = copy.copy(node.state)
-                        if board_mc.state is None:
-                            print('ayo')
+                    # while not node.is_at_end():
+                    #     chosen_node = self.tree_policy(node)
+                    #     if chosen_node is None:
+                    #         break
+                    #     node = node.children[chosen_node]
+                    #     print(f'Node: {node.state}')
+                    #     print(f'Board state: {board_mc.state}')
+                    #     board_mc.state = copy.copy(node.state)
+                    #     if board_mc.state is None:
+                    #         print('ayo')
                     self.generate_children(node)
 
                     # ROLLOUT
@@ -106,7 +112,7 @@ class MCTS:
                     # print(rollout_nodes)
                     # for rollout_node in rollout_nodes:
                     #     del rollout_node
-                    print(rollout_nodes)
+                    # print(rollout_nodes)
                     # print('\n')
                     parent = node.parent
                     while parent:
@@ -160,6 +166,23 @@ class MCTS:
             #     print(minibatch)
             #     self.model.fit(x=minibatch[0], y=minibatch[1])
         self.model.save_weights(self.checkpoint_path.format(epoch=1337))
+
+        # "OPTIMAL" GAME
+        self.random_prob = 0
+        for init_player in (1, 2):
+            final_game = Nim(10, 2, init_player=init_player)
+            while not final_game.is_game_over():
+                print(f'Final game pieces: {final_game.state["board_state"]} \t Player: {final_game.state["pid"]}')
+                node = TreeNode(final_game.state)
+                self.generate_children(node)
+                state = np.array([final_game.state['board_state'], final_game.state['pid']])
+                state = state.reshape(1, -1)
+                action, action_index = self.pick_action(state, node)
+                print(f'Action {action}')
+                final_game.make_move(action)
+            print(f'Final game pieces: {final_game.state["board_state"]} \t Player: {final_game.state["pid"]}')
+            winner = 3 - final_game.state['pid']
+            print(f'Winner is player {winner}\n\n')
 
     def generate_children(self, tree_node: TreeNode):
         if len(tree_node.children) == 0 and tree_node.state:

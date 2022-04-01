@@ -3,7 +3,7 @@ from simworld.nim import Nim
 import numpy as np
 
 if __name__ == '__main__':
-    tree_search = MCTS(50, 500, Nim(10, 2))
+    tree_search = MCTS(10, 500, Nim(10, 2))
     tree_search.run()
     state = {
         'board_state': 2,
