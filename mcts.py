@@ -25,6 +25,8 @@ class TreeNode:
         self.Q = 0
 
     def is_at_end(self):
+        if not self.children:
+            return False
         no_legal_moves = True
         for child in self.children:
             if not child.is_illegal:
@@ -33,11 +35,12 @@ class TreeNode:
 
 
 class MCTS:
-    def __init__(self, number_actual_games, number_search_games, game: Nim):
+    def __init__(self, number_actual_games, number_search_games, game: Nim, nr_actions):
         self.number_actual_games = number_actual_games
         self.number_search_games = number_search_games
         self.game = game
-        self.model = self.gennet()
+        self.nr_actions = nr_actions
+        self.model = self.gennet(num_classes=nr_actions)
         self.replay_buffer = []
         self.random_prob = 0.50
         self.random_prob_decay_rate = 0.95
@@ -66,23 +69,23 @@ class MCTS:
 
                     # TREE POLICY       # TODO: Make recursive when handling of children is improved
                     node = root
-                    if not node.is_at_end():
-                        chosen_node = self.tree_policy(node)
-                        if chosen_node is None:
-                            break
-                        node = node.children[chosen_node]
-                        board_mc.state = copy.copy(node.state)
-                    # while not node.is_at_end():
+                    # if not node.is_at_end():
                     #     chosen_node = self.tree_policy(node)
                     #     if chosen_node is None:
                     #         break
                     #     node = node.children[chosen_node]
-                    #     print(f'Node: {node.state}')
-                    #     print(f'Board state: {board_mc.state}')
                     #     board_mc.state = copy.copy(node.state)
-                    #     if board_mc.state is None:
-                    #         print('ayo')
-                    self.generate_children(node)
+                    while node.children and not node.is_at_end():
+                        chosen_node = self.tree_policy(node)
+                        # print(f'Traversed node: {node.state}, \t Chosen node {node.children[chosen_node].state}')
+                        if chosen_node is None: break
+                        if node.children[chosen_node].state is None: break
+                        node = node.children[chosen_node]
+                        board_mc.state = copy.copy(node.state)
+                        if board_mc.state is None:
+                            print('ayo')
+                    # print(f'Picked treenode: {node.state}')
+                    self.generate_children(node)    # Blue nodes
 
                     # ROLLOUT
                     grey_node = node
@@ -99,7 +102,7 @@ class MCTS:
                     # BACKPROPAGATION
                     evaluation = -1 if board_mc.state['pid'] == 1 else 1
 
-                    print(f'Node: {node.state} \t Eval: {evaluation} \t Grey_node: {grey_node.state}')
+                    # print(f'Endnode: {node.state} \t Eval: {evaluation} \t Grey_node: {grey_node.state}')
 
                     parent = node.parent
                     while parent:
@@ -114,6 +117,16 @@ class MCTS:
                         node.parent.Q_a[edge_index] = node.parent.score_a[edge_index] / node.parent.N_a[edge_index]
                         node = node.parent
                         parent = node.parent
+
+                    # Cleanup children:
+                    for child in grey_node.children:
+                        child.score_a = []
+                        child.N_a = []
+                        child.Q_a = []
+                        child.edges = []
+                        child.children = []
+                    node = None
+
                 root_state = np.array([root.state['board_state'], root.state['pid']])
                 root_state = root_state.reshape(1, -1)
                 D = normalize(np.array([root.N_a]))
@@ -236,7 +249,7 @@ class MCTS:
             combined[policy] = -100000
             policy = np.argmax(combined)
             # print(combined)
-            if np.sum(combined) == -200000:
+            if np.sum(combined) == -100000 * self.nr_actions:
                 return None
         return policy
 
