@@ -43,7 +43,7 @@ class MCTS:
         self.model = self.gennet(num_classes=nr_actions)
         self.replay_buffer = []
         self.random_prob = 0.50
-        self.random_prob_decay_rate = 0.95
+        self.random_prob_decay_rate = 1
 
         # Include the epoch in the file name (uses `str.format`)
         self.checkpoint_path = "models/cp-{epoch:04d}.ckpt"
@@ -100,10 +100,8 @@ class MCTS:
                             node = node.children[action_index]
 
                     # BACKPROPAGATION
-                    evaluation = -1 if board_mc.state['pid'] == 1 else 1
-
+                    evaluation = 0 if board_mc.state['pid'] == 1 else 1
                     # print(f'Endnode: {node.state} \t Eval: {evaluation} \t Grey_node: {grey_node.state}')
-
                     parent = node.parent
                     while parent:
                         node.score += evaluation
@@ -115,6 +113,10 @@ class MCTS:
                         node.parent.score_a[edge_index] += evaluation
                         node.parent.N_a[edge_index] += 1
                         node.parent.Q_a[edge_index] = node.parent.score_a[edge_index] / node.parent.N_a[edge_index]
+                        print(f'Parent state: {node.parent.state}'
+                              f'\tParent Q_a: {node.parent.Q_a} '
+                              f'\tParent N_a {node.parent.N_a} '
+                              f'\tParent Score_a {node.parent.score_a}')
                         node = node.parent
                         parent = node.parent
 
