@@ -54,6 +54,7 @@ class MCTS:
             save_freq=20)
 
     def run(self):
+        # TODO: Bedre kontroll på hvilke noder som eksisterer (følger av root) + Eval dersom tree policy finner en end_state
         for g_a in range(self.number_actual_games):
             board_a = self.game.create_copy()
             root = TreeNode(copy.copy(board_a.state))
@@ -62,6 +63,8 @@ class MCTS:
                 board_mc.state = copy.copy(root.state)
 
                 for g_s in range(self.number_search_games):
+
+                    # TREE POLICY       # TODO: Make recursive when handling of children is improved
                     node = root
                     if not node.is_at_end():
                         chosen_node = self.tree_policy(node)
@@ -82,47 +85,31 @@ class MCTS:
                     self.generate_children(node)
 
                     # ROLLOUT
-                    rollout_nodes = []
+                    grey_node = node
                     while node.state and not board_mc.is_game_over():
                         self.generate_children(node)
-                        # TODO: Select action using ANET
-                        chosen_action = random.randrange(len(node.edges))
                         nn_input = np.array([node.state['board_state'], node.state['pid']])
-                        # input_tensor = tf.convert_to_tensor(nn_input, dtype=tf.int32)
                         nn_input = nn_input.reshape(1, -1)
-                        # print(f'Input: {nn_input}')
                         action, action_index = self.pick_action(nn_input, node)
                         # print(f'Action index: {action_index} \tState: {node.state["board_state"]} \tEdges: {node.edges}')
                         if not board_mc.is_game_over():
-                            # print(board_mc.state)
                             board_mc.make_move(action)
                             node = node.children[action_index]
-                            rollout_nodes.append(node)
-                    if board_mc.state is None:
-                        print('lol')
 
                     # BACKPROPAGATION
-                    if board_mc.state['pid'] == 1:
-                        eval = -1
-                    else:
-                        eval = 1
-                    if len(rollout_nodes) > 0:
-                        node = rollout_nodes[-1]
+                    evaluation = -1 if board_mc.state['pid'] == 1 else 1
 
-                    # print(rollout_nodes)
-                    # for rollout_node in rollout_nodes:
-                    #     del rollout_node
-                    # print(rollout_nodes)
-                    # print('\n')
+                    print(f'Node: {node.state} \t Eval: {evaluation} \t Grey_node: {grey_node.state}')
+
                     parent = node.parent
                     while parent:
-                        node.score += eval
+                        node.score += evaluation
                         node.N += 1
                         node.Q = node.score / node.N
                         edge_index = node.parent.children.index(node)
                         if len(node.parent.N_a) <= edge_index:
                             print('error')
-                        node.parent.score_a[edge_index] += eval
+                        node.parent.score_a[edge_index] += evaluation
                         node.parent.N_a[edge_index] += 1
                         node.parent.Q_a[edge_index] = node.parent.score_a[edge_index] / node.parent.N_a[edge_index]
                         node = node.parent
