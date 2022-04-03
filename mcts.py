@@ -43,7 +43,7 @@ class MCTS:
         self.model = self.gennet(num_classes=nr_actions)
         self.replay_buffer = []
         self.random_prob = 0.50
-        self.random_prob_decay_rate = 1
+        self.random_prob_decay_rate = 0.95
 
         # Include the epoch in the file name (uses `str.format`)
         self.checkpoint_path = "models/cp-{epoch:04d}.ckpt"
@@ -67,24 +67,15 @@ class MCTS:
 
                 for g_s in range(self.number_search_games):
 
-                    # TREE POLICY       # TODO: Make recursive when handling of children is improved
+                    # TREE POLICY
                     node = root
-                    # if not node.is_at_end():
-                    #     chosen_node = self.tree_policy(node)
-                    #     if chosen_node is None:
-                    #         break
-                    #     node = node.children[chosen_node]
-                    #     board_mc.state = copy.copy(node.state)
                     while node.children and not node.is_at_end():
                         chosen_node = self.tree_policy(node)
-                        # print(f'Traversed node: {node.state}, \t Chosen node {node.children[chosen_node].state}')
                         if chosen_node is None: break
                         if node.children[chosen_node].state is None: break
                         node = node.children[chosen_node]
                         board_mc.state = copy.copy(node.state)
-                        if board_mc.state is None:
-                            print('ayo')
-                    # print(f'Picked treenode: {node.state}')
+
                     self.generate_children(node)    # Blue nodes
 
                     # ROLLOUT
@@ -94,47 +85,38 @@ class MCTS:
                         nn_input = np.array([node.state['board_state'], node.state['pid']])
                         nn_input = nn_input.reshape(1, -1)
                         action, action_index = self.pick_action(nn_input, node)
-                        # print(f'Action index: {action_index} \tState: {node.state["board_state"]} \tEdges: {node.edges}')
                         if not board_mc.is_game_over():
                             board_mc.make_move(action)
                             node = node.children[action_index]
 
                     # BACKPROPAGATION
-                    evaluation = 0 if board_mc.state['pid'] == 1 else 1
-                    # print(f'Endnode: {node.state} \t Eval: {evaluation} \t Grey_node: {grey_node.state}')
+                    evaluation = -1 if board_mc.state['pid'] == 1 else 1
                     parent = node.parent
                     while parent:
                         node.score += evaluation
                         node.N += 1
                         node.Q = node.score / node.N
                         edge_index = node.parent.children.index(node)
-                        if len(node.parent.N_a) <= edge_index:
-                            print('error')
                         node.parent.score_a[edge_index] += evaluation
                         node.parent.N_a[edge_index] += 1
                         node.parent.Q_a[edge_index] = node.parent.score_a[edge_index] / node.parent.N_a[edge_index]
-                        print(f'Parent state: {node.parent.state}'
-                              f'\tParent Q_a: {node.parent.Q_a} '
-                              f'\tParent N_a {node.parent.N_a} '
-                              f'\tParent Score_a {node.parent.score_a}')
                         node = node.parent
                         parent = node.parent
 
                     # Cleanup children:
-                    for child in grey_node.children:
-                        child.score_a = []
-                        child.N_a = []
-                        child.Q_a = []
-                        child.edges = []
-                        child.children = []
-                    node = None
+                    if not grey_node.is_at_end():
+                        for child in grey_node.children:
+                            child.score_a = []
+                            child.N_a = []
+                            child.Q_a = []
+                            child.edges = []
+                            child.children = []
 
                 root_state = np.array([root.state['board_state'], root.state['pid']])
                 root_state = root_state.reshape(1, -1)
                 D = normalize(np.array([root.N_a]))
                 case = (root_state, D)
                 self.replay_buffer.append(case)
-                # self.model(case[0])
                 action, action_index = self.pick_action(case[0], root)
                 board_a.make_move(action)
                 root = root.children[action_index]
@@ -156,17 +138,11 @@ class MCTS:
             batch_y = np.zeros((number_from_batch, len(ex_batch_y)))
             for i in range(number_from_batch):
                 batch_y[i, :] = subbatch[i][1]
-
-            # for i in range(batch_x.shape[0]):
-            #   print(f'{batch_x[i]} \t => \t {batch_y[i]}')
             for i in range(len(self.replay_buffer)):
                 print(self.replay_buffer[i])
 
             self.model.fit(x=batch_x, y=batch_y, callbacks=[self.cp_callback])
             self.random_prob *= self.random_prob_decay_rate
-            # for minibatch in subbatch:
-            #     print(minibatch)
-            #     self.model.fit(x=minibatch[0], y=minibatch[1])
         self.model.save_weights(self.checkpoint_path.format(epoch=1337))
 
         # "OPTIMAL" GAME
@@ -215,6 +191,7 @@ class MCTS:
             return self.get_greedy_action(state, node)
         else:
             illegal_move = True
+            index = random.randrange(len(node.edges))
             while illegal_move:
                 index = random.randrange(len(node.edges))
                 illegal_move = node.children[index].is_illegal
@@ -222,35 +199,26 @@ class MCTS:
 
     def get_greedy_action(self, state, node):
         action_tensor = self.model(state)
-        # print(action_tensor)
-        # chosen_action = tf.math.argmax(action_tensor, axis=1)
         action_dist = action_tensor.numpy()[0]
-        # print(action_dist)
-        # print(f'Actions {action_dist}')
         action_index = np.argmax(action_dist)
-        while node.children[action_index].is_illegal:  # TODO: Normalize dist.
-            # print(action_dist)
+        while node.children[action_index].is_illegal:
             action_dist[action_index] = 0
             action_dist = normalize(action_dist)
             action_index = np.argmax(action_dist)
         while action_index >= len(node.edges):
-            # print(action_dist)
             action_dist[action_index] = 0
             action_dist = normalize(action_dist)
             action_index = np.argmax(action_dist)
         action = node.edges[action_index]
-        # print(action)
         return action, action_index
 
     def tree_policy(self, node: TreeNode):
-        u = [1*np.sqrt(np.log(node.N)/(1 + N_sa)) for N_sa in node.N_a]
+        u = [5*np.sqrt(np.log(node.N)/(1 + N_sa)) for N_sa in node.N_a]
         combined = np.add(u, node.Q_a)
         policy = np.argmax(combined)
-        # print(f'N_a: {node.N_a} \t u: {u} \t Q_a: {node.Q_a} \t Combined: {combined}')
-        while node.children[policy].is_at_end():
+        while node.children[policy].state is None:
             combined[policy] = -100000
             policy = np.argmax(combined)
-            # print(combined)
             if np.sum(combined) == -100000 * self.nr_actions:
                 return None
         return policy
