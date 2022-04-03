@@ -1,0 +1,16 @@
+{
+  "nr_episodes":                  100,
+  "nr_search_games":              100,
+  "init_exploration_rate":        0.50,
+  "exploration_rate_decay_fact":  0.98,
+  "u_factor":                     1.00,
+
+  "learning_rate":                0.001,
+  "nn_dims":                      [1024, 512, 32, 1],
+  "hidden_act_func":              "relu",
+  "optimizer":                    "adam",
+  "M":                            10,
+  "nr_topp_games"
+
+  "hex_size":                     5
+}

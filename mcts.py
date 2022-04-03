@@ -42,8 +42,10 @@ class MCTS:
         self.nr_actions = nr_actions
         self.model = self.gennet(num_classes=nr_actions)
         self.replay_buffer = []
-        self.random_prob = 0.50
-        self.random_prob_decay_rate = 0.95
+        self.prob_disc_dict = {}
+        self.exploration_rate = 0.50
+        self.exploration_rate_decay_fact = 0.95
+
 
         # Include the epoch in the file name (uses `str.format`)
         self.checkpoint_path = "models/cp-{epoch:04d}.ckpt"
@@ -114,9 +116,10 @@ class MCTS:
 
                 root_state = np.array([root.state['board_state'], root.state['pid']])
                 root_state = root_state.reshape(1, -1)
-                D = normalize(np.array([root.N_a]))
+                D = copy.copy(normalize(np.array([root.N_a])))
                 case = (root_state, D)
                 self.replay_buffer.append(case)
+                self.prob_disc_dict[(root.state['board_state'], root.state['pid'])] = D
                 action, action_index = self.pick_action(case[0], root)
                 board_a.make_move(action)
                 root = root.children[action_index]
@@ -124,11 +127,6 @@ class MCTS:
             batch_size = len(self.replay_buffer)
             number_from_batch = random.randrange(math.ceil(batch_size/5), batch_size)
             subbatch = random.sample(self.replay_buffer, number_from_batch)
-
-            # TODO: Train using vector of vectors:
-            print(f'RBUF: {self.replay_buffer}')
-            print(f'Number for subbatch: {number_from_batch}')
-            print(f'Subbatch: {subbatch}')
 
             ex_batch_x = subbatch[0][0][0]
             ex_batch_y = subbatch[0][1][0]
@@ -138,15 +136,15 @@ class MCTS:
             batch_y = np.zeros((number_from_batch, len(ex_batch_y)))
             for i in range(number_from_batch):
                 batch_y[i, :] = subbatch[i][1]
-            for i in range(len(self.replay_buffer)):
-                print(self.replay_buffer[i])
+            # for i in range(len(self.replay_buffer)):
+            #     print(self.replay_buffer[i])
 
             self.model.fit(x=batch_x, y=batch_y, callbacks=[self.cp_callback])
-            self.random_prob *= self.random_prob_decay_rate
+            self.exploration_rate *= self.exploration_rate_decay_fact
         self.model.save_weights(self.checkpoint_path.format(epoch=1337))
 
         # "OPTIMAL" GAME
-        self.random_prob = 0
+        self.exploration_rate = 0
         for init_player in (1, 2):
             final_game = Nim(10, 2, init_player=init_player)
             while not final_game.is_game_over():
@@ -161,6 +159,17 @@ class MCTS:
             print(f'Final game pieces: {final_game.state["board_state"]} \t Player: {final_game.state["pid"]}')
             winner = 3 - final_game.state['pid']
             print(f'Winner is player {winner}\n\n')
+
+            print(f'Model predictions: ')
+            for i in range(1, 11):
+                node = TreeNode({'board_state': i, 'pid': init_player})
+                print(f'State: [{i}, {init_player}]')
+                self.generate_children(node)
+                state = np.array([i, init_player])
+                state = state.reshape(1, -1)
+                action, action_index = self.pick_action(state, node, verbose=True)
+                if (i, init_player) in self.prob_disc_dict:
+                    print(f'Training case extreme: {self.prob_disc_dict[(i, init_player)]}\n')
 
     def generate_children(self, tree_node: TreeNode):
         if len(tree_node.children) == 0 and tree_node.state:
@@ -186,9 +195,9 @@ class MCTS:
             parent.Q_a.append(0)
             child.parent = parent
 
-    def pick_action(self, state, node):
-        if random.uniform(0, 1) < 1 - self.random_prob:
-            return self.get_greedy_action(state, node)
+    def pick_action(self, state, node, verbose=False):
+        if random.uniform(0, 1) < 1 - self.exploration_rate:
+            return self.get_greedy_action(state, node, verbose=verbose)
         else:
             illegal_move = True
             index = random.randrange(len(node.edges))
@@ -197,40 +206,52 @@ class MCTS:
                 illegal_move = node.children[index].is_illegal
             return node.edges[index], index
 
-    def get_greedy_action(self, state, node):
+    def get_greedy_action(self, state, node: TreeNode, verbose=False):
         action_tensor = self.model(state)
         action_dist = action_tensor.numpy()[0]
-        action_index = np.argmax(action_dist)
-        while node.children[action_index].is_illegal:
-            action_dist[action_index] = 0
+        action_index = np.argmax(action_dist) if node.state['pid'] == 1 else np.argmin(action_dist)
+        while node.children[action_index].is_illegal or action_index >= len(node.edges):
+            action_dist[action_index] = 0 if node.state['pid'] == 1 else 1
             action_dist = normalize(action_dist)
-            action_index = np.argmax(action_dist)
-        while action_index >= len(node.edges):
-            action_dist[action_index] = 0
-            action_dist = normalize(action_dist)
-            action_index = np.argmax(action_dist)
+            action_index = np.argmax(action_dist) if node.state['pid'] == 1 else np.argmin(action_dist)
+        if verbose: print(f'Action dist: {action_dist}')
         action = node.edges[action_index]
         return action, action_index
 
     def tree_policy(self, node: TreeNode):
-        u = [5*np.sqrt(np.log(node.N)/(1 + N_sa)) for N_sa in node.N_a]
-        combined = np.add(u, node.Q_a)
-        policy = np.argmax(combined)
-        while node.children[policy].state is None:
-            combined[policy] = -100000
+
+        if node.state == {'board_state': 2, 'pid': 1} or node.state == {'board_state': 2, 'pid': 2}:
+            pass
+
+        u = [1*np.sqrt(np.log(node.N)/(1 + N_sa)) for N_sa in node.N_a]
+
+        if node.state['pid'] == 1:
+            combined = np.add(node.Q_a, u)
             policy = np.argmax(combined)
-            if np.sum(combined) == -100000 * self.nr_actions:
-                return None
+        else:
+            combined = np.subtract(node.Q_a, u)
+            policy = np.argmin(combined)
+
+        while node.children[policy].state is None:
+            if node.state['pid'] == 1:
+                combined[policy] = -100000
+                policy = np.argmax(combined)
+                if np.sum(combined) == -100000 * self.nr_actions:
+                    return None
+            else:
+                combined[policy] = 100000
+                policy = np.argmin(combined)
+                if np.sum(combined) == 100000 * self.nr_actions:
+                    return None
         return policy
 
-    def gennet(self, num_classes=2, lrate=0.0001, optimizer='SGD', loss='categorical_crossentropy', in_shape=(2,)):
+    def gennet(self, num_classes=2, lrate=0.01, optimizer='SGD', loss='categorical_crossentropy', in_shape=(2,)):
         optimizer = eval('KER.optimizers.' + optimizer)
         loss = eval('KER.losses.' + loss) if type(loss) == str else loss
 
         model = KER.Sequential()
-        model.add(KER.layers.Dense(20, input_shape=in_shape, activation='relu', name='input_layer'))
-        model.add(KER.layers.Dense(512, activation='relu', name='middle_layer1'))
-        model.add(KER.layers.Dense(256, activation='relu', name='middle_layer2'))
+        model.add(KER.layers.Dense(2, input_shape=in_shape, activation='relu', name='input_layer'))
+        model.add(KER.layers.Dense(64, activation='relu', name='middle_layer1'))
         model.add(KER.layers.Dense(num_classes, activation='softmax', name='output_layer'))
 
         model.compile(optimizer=optimizer(learning_rate=lrate), loss=loss, metrics=[KER.metrics.categorical_accuracy])
