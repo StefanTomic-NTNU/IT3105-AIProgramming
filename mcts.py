@@ -130,6 +130,17 @@ class MCTS:
 
             ex_batch_x = subbatch[0][0][0]
             ex_batch_y = subbatch[0][1][0]
+
+            op_batch_x = np.zeros((len(self.prob_disc_dict), 2))
+            op_batch_y = np.zeros((len(self.prob_disc_dict), 2))
+
+            i = 0
+            for key in self.prob_disc_dict.keys():
+                op_batch_x[i, :] = np.array(list(key))
+                op_batch_y[i, :] = np.array(self.prob_disc_dict[key])
+
+                i += 1
+
             batch_x = np.zeros((number_from_batch, len(ex_batch_x)))
             for i in range(number_from_batch):
                 batch_x[i, :] = subbatch[i][0]
@@ -139,7 +150,7 @@ class MCTS:
             # for i in range(len(self.replay_buffer)):
             #     print(self.replay_buffer[i])
 
-            self.model.fit(x=batch_x, y=batch_y, callbacks=[self.cp_callback])
+            self.model.fit(x=op_batch_x, y=op_batch_y, callbacks=[self.cp_callback])
             self.exploration_rate *= self.exploration_rate_decay_fact
         self.model.save_weights(self.checkpoint_path.format(epoch=1337))
 
@@ -245,12 +256,12 @@ class MCTS:
                     return None
         return policy
 
-    def gennet(self, num_classes=2, lrate=0.01, optimizer='SGD', loss='categorical_crossentropy', in_shape=(2,)):
+    def gennet(self, num_classes=2, lrate=1, optimizer='SGD', loss='categorical_crossentropy', in_shape=(2,)):
         optimizer = eval('KER.optimizers.' + optimizer)
         loss = eval('KER.losses.' + loss) if type(loss) == str else loss
 
         model = KER.Sequential()
-        model.add(KER.layers.Dense(2, input_shape=in_shape, activation='relu', name='input_layer'))
+        model.add(KER.layers.Dense(128, input_shape=in_shape, activation='relu', name='input_layer'))
         model.add(KER.layers.Dense(64, activation='relu', name='middle_layer1'))
         model.add(KER.layers.Dense(num_classes, activation='softmax', name='output_layer'))
 
