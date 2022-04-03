@@ -35,17 +35,16 @@ class TreeNode:
 
 
 class MCTS:
-    def __init__(self, number_actual_games, number_search_games, game: Nim, nr_actions):
+    def __init__(self, number_actual_games, number_search_games, game: Nim, nr_actions, nn):
         self.number_actual_games = number_actual_games
         self.number_search_games = number_search_games
         self.game = game
         self.nr_actions = nr_actions
-        self.model = self.gennet(num_classes=nr_actions)
+        self.model = nn
         self.replay_buffer = []
         self.prob_disc_dict = {}
         self.exploration_rate = 0.50
         self.exploration_rate_decay_fact = 0.95
-
 
         # Include the epoch in the file name (uses `str.format`)
         self.checkpoint_path = "models/cp-{epoch:04d}.ckpt"
@@ -59,7 +58,6 @@ class MCTS:
             save_freq=20)
 
     def run(self):
-        # TODO: Bedre kontroll på hvilke noder som eksisterer (følger av root) + Eval dersom tree policy finner en end_state
         for g_a in range(self.number_actual_games):
             board_a = self.game.create_copy()
             root = TreeNode(copy.copy(board_a.state))
@@ -138,7 +136,6 @@ class MCTS:
             for key in self.prob_disc_dict.keys():
                 op_batch_x[i, :] = np.array(list(key))
                 op_batch_y[i, :] = np.array(self.prob_disc_dict[key])
-
                 i += 1
 
             batch_x = np.zeros((number_from_batch, len(ex_batch_x)))
@@ -150,9 +147,9 @@ class MCTS:
             # for i in range(len(self.replay_buffer)):
             #     print(self.replay_buffer[i])
 
-            self.model.fit(x=op_batch_x, y=op_batch_y, callbacks=[self.cp_callback])
+            self.model.fit(x=batch_x, y=batch_y, callbacks=[self.cp_callback])
             self.exploration_rate *= self.exploration_rate_decay_fact
-        self.model.save_weights(self.checkpoint_path.format(epoch=1337))
+        self.model.save(self.checkpoint_path.format(epoch=1337))
 
         # "OPTIMAL" GAME
         self.exploration_rate = 0
@@ -218,8 +215,8 @@ class MCTS:
             return node.edges[index], index
 
     def get_greedy_action(self, state, node: TreeNode, verbose=False):
-        action_tensor = self.model(state)
-        action_dist = action_tensor.numpy()[0]
+        action_tensor = self.model.predict(state)
+        action_dist = action_tensor.numpy()[0]  #TODO: Change to argmax for pid 1 and 2
         action_index = np.argmax(action_dist) if node.state['pid'] == 1 else np.argmin(action_dist)
         while node.children[action_index].is_illegal or action_index >= len(node.edges):
             action_dist[action_index] = 0 if node.state['pid'] == 1 else 1

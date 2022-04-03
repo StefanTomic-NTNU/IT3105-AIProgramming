@@ -1,21 +1,30 @@
+import json
+
 from mcts import MCTS, TreeNode
+from neuralnet import NeuralNet
+from rl_system import ReinforcementLearningSystem
 from simworld.nim import Nim
 import numpy as np
 
+from topp import Tournament
+
+
+def read_config():
+    with open('config.json', 'r') as f:
+        config_ = json.load(f)
+    return config_
+
+
 if __name__ == '__main__':
-    tree_search = MCTS(200, 500, Nim(10, 2), 2)
-    tree_search.run()
-    state = {
-        'board_state': 2,
-        'pid': 1
-    }
+    config = read_config()
 
-    # node = TreeNode(state)
-    # tree_search.generate_children(node)
-    # nn_input = np.array([node.state['board_state'], node.state['pid']])
-    # # input_tensor = tf.convert_to_tensor(nn_input, dtype=tf.int32)
-    # nn_input = nn_input.reshape(1, -1)
-    # action, action_index = tree_search.pick_action(nn_input, node)
-    #
-    # tree_search.model()
+    game = Nim(config['nim_pieces'], config['nim_k'])
+    nn = NeuralNet(lrate=config['learning_rate'], nn_dims=tuple(config['nn_dims']),
+                   hidden_act_func=config['hidden_act_func'], optimizer=config['optimizer'],
+                   M=config['M'])
+    mcts = MCTS(config['nr_episodes'], config['nr_search_games'], game, config['nn_dims'][0], nn)
 
+    rl_system = ReinforcementLearningSystem()
+    topp = Tournament()
+
+    mcts.run()
