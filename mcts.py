@@ -217,20 +217,16 @@ class MCTS:
     def get_greedy_action(self, state, node: TreeNode, verbose=False):
         action_tensor = self.model.predict(state)
         action_dist = action_tensor.numpy()[0]  #TODO: Change to argmax for pid 1 and 2
-        action_index = np.argmax(action_dist) if node.state['pid'] == 1 else np.argmin(action_dist)
+        action_index = np.argmax(action_dist)
         while node.children[action_index].is_illegal or action_index >= len(node.edges):
-            action_dist[action_index] = 0 if node.state['pid'] == 1 else 1
+            action_dist[action_index] = 0
             action_dist = normalize(action_dist)
-            action_index = np.argmax(action_dist) if node.state['pid'] == 1 else np.argmin(action_dist)
+            action_index = np.argmax(action_dist)
         if verbose: print(f'Action dist: {action_dist}')
         action = node.edges[action_index]
         return action, action_index
 
     def tree_policy(self, node: TreeNode):
-
-        if node.state == {'board_state': 2, 'pid': 1} or node.state == {'board_state': 2, 'pid': 2}:
-            pass
-
         u = [1*np.sqrt(np.log(node.N)/(1 + N_sa)) for N_sa in node.N_a]
 
         if node.state['pid'] == 1:
