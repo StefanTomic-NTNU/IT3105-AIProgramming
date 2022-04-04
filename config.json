@@ -13,7 +13,7 @@
   "nr_topp_games":                25,
   "checkpoint_path":              "models/checkpoint-{episode:04d}.ckpt",
 
-  "hex_size":                     5,
+  "hex_size":                     4,
 
   "nim_pieces":                   20,
   "nim_k":                        2

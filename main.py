@@ -35,9 +35,22 @@ if __name__ == '__main__':
     rl_system = ReinforcementLearningSystem()
     topp = Tournament()
 
-    hex.cells[0, 0].piece = (1, 0)
-    hex.cells[2, 2].piece = (0, 1)
-    hex.cells[4, 0].piece = (1, 0)
+    # hex.cells[0, 0].piece = (1, 0)
+    # hex.cells[2, 2].piece = (0, 1)
+    # hex.cells[4, 0].piece = (1, 0)
+    # hex.render()
+    # hex.state = {'board_state': hex.simplify_state(),
+    #               'pid': 1}
+    # print('state:')
+    # print(hex.state['board_state'])
+    # print(f'{len(hex.state["board_state"])} \n\n')
+    # actions = hex.get_legal_actions()
+    # print(actions)
+    # print(f'{len(actions)} \n\n')
+
+    hex.make_move(2)
+    hex.make_move(1)
+    hex.make_move(10)
     hex.render()
 
     # mcts.run()

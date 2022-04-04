@@ -13,14 +13,14 @@ class Nim:
             'board_state': n,
             'pid': init_player
                       }
-        self.k = k  # max num pieces taken
+        self.K = k  # max num pieces taken
 
     def make_move(self, action):
         if self.is_game_over():
             print('Game is over')
             return
-        if action > self.k:
-            raise Exception(f'Cannot take {action} pieces, when {self.k} is the max')
+        if action > self.K:
+            raise Exception(f'Cannot take {action} pieces, when {self.K} is the max')
         if action > self.state['board_state']:
             self.state['board_state'] = 0
         else:
@@ -33,13 +33,13 @@ class Nim:
         return self.state['board_state'] <= 0
 
     def get_legal_actions(self):
-        return tuple(list(range(1, self.state['board_state']+1))) if self.k > self.state['board_state'] else tuple(list(range(1, self.k+1)))
+        return tuple(list(range(1, self.state['board_state']+1))) if self.K > self.state['board_state'] else tuple(list(range(1, self.K + 1)))
 
     def is_action_legal(self, action):
-        return self.k >= action > 0 and action <= self.state['board_state']
+        return self.K >= action > 0 and action <= self.state['board_state']
 
     def get_all_actions(self):
-        return tuple(list(range(1, self.k+1)))
+        return tuple(list(range(1, self.K + 1)))
 
     def render(self):
         if self.is_game_over():
@@ -50,7 +50,7 @@ class Nim:
               f'Legal actions: {self.get_legal_actions()} ')
 
     def create_copy(self):
-        return Nim(self.state['board_state'], self.k, init_player=self.state['pid'])
+        return Nim(self.state['board_state'], self.K, init_player=self.state['pid'])
 
     def generate_children(self):
         edges = []
@@ -78,8 +78,8 @@ class Nim:
             'board_state': state['board_state'],
             'pid': state['pid']
                       }
-        if action > self.k:
-            raise Exception(f'Cannot take {action} pieces, when {self.k} is the max')
+        if action > self.K:
+            raise Exception(f'Cannot take {action} pieces, when {self.K} is the max')
         if action > state['board_state']:
             new_state['board_state'] = 0
         else:
@@ -91,7 +91,7 @@ class Nim:
         return state['board_state'] <= 0
 
     def get_legal_actions_(self, state):
-        return tuple(list(range(1, state['board_state']+1))) if self.k > state['board_state'] else tuple(list(range(1, self.k+1)))
+        return tuple(list(range(1, state['board_state']+1))) if self.K > state['board_state'] else tuple(list(range(1, self.K + 1)))
 
     def is_action_legal_(self, state, action):
         if state is None: return False
