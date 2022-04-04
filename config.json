@@ -6,15 +6,15 @@
   "u_factor":                     1.00,
 
   "learning_rate":                0.001,
-  "nn_dims":                      [1024, 512, 32, 2],
+  "nn_dims":                      [1024, 512, 32, 16],
   "hidden_act_func":              "relu",
   "optimizer":                    "Adam",
   "M":                            4,
   "nr_topp_games":                25,
-  "checkpoint_path":              "models/checkpoint-{episode:04d}.ckpt",
+  "checkpoint_path":              "models/hex-checkpoint-{episode:04d}.ckpt",
 
-  "hex_size":                     4,
+  "hex_size":                     3,
 
-  "nim_pieces":                   20,
+  "nim_pieces":                   10,
   "nim_k":                        2
 }

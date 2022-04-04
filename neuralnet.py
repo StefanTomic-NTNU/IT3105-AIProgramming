@@ -37,3 +37,6 @@ class NeuralNet:
 
     def save(self):
         self.model.save(self.checkpoint_path.format(episode=self.episode_count))
+
+    def load_weights(self, episode_count):
+        self.model.load_weights(self.checkpoint_path.format(episode=episode_count))

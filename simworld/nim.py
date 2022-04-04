@@ -1,3 +1,4 @@
+import copy
 import random
 
 
@@ -32,11 +33,11 @@ class Nim:
             return True
         return self.state['board_state'] <= 0
 
+    def set_state(self, state):
+        self.state = copy.copy(state)
+
     def get_legal_actions(self):
         return tuple(list(range(1, self.state['board_state']+1))) if self.K > self.state['board_state'] else tuple(list(range(1, self.K + 1)))
-
-    def is_action_legal(self, action):
-        return self.K >= action > 0 and action <= self.state['board_state']
 
     def get_all_actions(self):
         return tuple(list(range(1, self.K + 1)))

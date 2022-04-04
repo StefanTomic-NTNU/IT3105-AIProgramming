@@ -64,9 +64,11 @@ class MCTS:
             root = TreeNode(copy.copy(board_a.state))
             while not board_a.is_game_over():
                 board_mc = self.game.create_copy()
-                board_mc.state = copy.copy(root.state)
+                board_mc.set_state(root.state)
 
                 for g_s in range(self.number_search_games):
+                    board_mc = self.game.create_copy()
+                    board_mc.set_state(root.state)
 
                     # TREE POLICY
                     node = root
@@ -74,8 +76,8 @@ class MCTS:
                         chosen_node = self.tree_policy(node)
                         if chosen_node is None: break
                         if node.children[chosen_node].state is None: break
+                        board_mc.make_move(node.edges[chosen_node])
                         node = node.children[chosen_node]
-                        board_mc.state = copy.copy(node.state)
 
                     self.generate_children(node)    # Blue nodes
 
@@ -156,8 +158,10 @@ class MCTS:
 
         # "OPTIMAL" GAME
         self.exploration_rate = 0
+        # self.model.load_weights(200)
         for init_player in (1, 2):
-            final_game = Nim(10, 2, init_player=init_player)
+            final_game = self.game.create_copy()
+            self.game.state['pid'] = init_player
             while not final_game.is_game_over():
                 print(f'Final game pieces: {final_game.state["board_state"]} \t Player: {final_game.state["pid"]}')
                 node = TreeNode(final_game.state)
