@@ -4,9 +4,10 @@ import numpy as np
 
 
 class Cell:
-    def __init__(self):
+    def __init__(self, pos):
         self.neighbors = []
         self.piece: tuple = (0, 0)
+        self.pos: tuple = pos
 
 
 class Hex:
@@ -15,15 +16,16 @@ class Hex:
         self.cells = np.empty([size, size], dtype=object)
         for r in range(size):
             for c in range(size):
-                new_cell = Cell()
+                new_cell = Cell((r, c))
                 self.cells[r, c] = new_cell
-
-                self.add_neighbor(new_cell, r - 1, c)
-                self.add_neighbor(new_cell, r - 1, c + 1)
-                self.add_neighbor(new_cell, r, c + 1)
-                self.add_neighbor(new_cell, r + 1, c)
-                self.add_neighbor(new_cell, r + 1, c - 1)
-                self.add_neighbor(new_cell, r, c - 1)
+        for r in range(size):
+            for c in range(size):
+                self.add_neighbor(self.cells[r, c], r - 1, c)
+                self.add_neighbor(self.cells[r, c], r - 1, c + 1)
+                self.add_neighbor(self.cells[r, c], r,     c + 1)
+                self.add_neighbor(self.cells[r, c], r + 1, c)
+                self.add_neighbor(self.cells[r, c], r + 1, c - 1)
+                self.add_neighbor(self.cells[r, c], r,     c - 1)
         if init_player is None:
             init_player = random.randint(1, 2)
         self.state = {'board_state': self.simplify_state(),
@@ -31,6 +33,8 @@ class Hex:
 
     def add_neighbor(self, cell, neighbor_r, neighbor_c):
         try:
+            if neighbor_r < 0 or neighbor_c < 0:
+                return
             cell.neighbors.append(self.cells[neighbor_r, neighbor_c])
         except IndexError:
             pass
@@ -97,14 +101,44 @@ class Hex:
             r = np.floor_divide(action, self.SIZE)
             piece = (1, 0) if self.state['pid'] == 1 else (0, 1)
             self.state['board_state'][action, :] = np.array(piece)
+            print(self.state['board_state'])
             self.cells[r, c].piece = piece
         self.state['pid'] = 3 - self.state['pid']
 
     def is_game_over(self):
-        if self.state is None:
-            return True
+        if self.state is None: return True
+        queued_cells = []
+        explored_cells = []
+        for c in range(self.SIZE):
+            cell = self.cells[0, c]
+            if cell.piece == (1, 0):
+                queued_cells.append(cell)
+        while queued_cells:
+            cell = queued_cells[0]
+            if cell.pos[0] == self.SIZE-1:
+                return True
+            [queued_cells.append(neighbor) for neighbor in cell.neighbors
+             if neighbor and
+             neighbor.piece == cell.piece and
+             neighbor not in queued_cells and
+             neighbor not in explored_cells]
+            explored_cells.append(cell)
+            queued_cells.pop(0)
 
+        for r in range(self.SIZE):
+            cell = self.cells[r, 0]
+            if cell.piece == (0, 1):
+                queued_cells.append(cell)
+        while queued_cells:
+            cell = queued_cells[0]
+            if cell.pos[1] == self.SIZE-1:
+                return True
+            [queued_cells.append(neighbor) for neighbor in cell.neighbors
+             if neighbor and
+             neighbor.piece == cell.piece and
+             neighbor not in queued_cells and
+             neighbor not in explored_cells]
+            explored_cells.append(cell)
+            queued_cells.pop(0)
 
-if __name__ == '__main__':
-    hex_board = Hex(5)
-    hex_board.render()
+        return False

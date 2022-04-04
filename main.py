@@ -23,7 +23,7 @@ if __name__ == '__main__':
     M = config['M']
     episodes_per_game = round(episodes / M)
 
-    hex = Hex(config['hex_size'])
+    hex = Hex(config['hex_size'], init_player=2)
     nim = Nim(config['nim_pieces'], config['nim_k'])
     nn = NeuralNet(lrate=config['learning_rate'], nn_dims=tuple(config['nn_dims']),
                    hidden_act_func=config['hidden_act_func'], optimizer=config['optimizer'],
@@ -48,9 +48,30 @@ if __name__ == '__main__':
     # print(actions)
     # print(f'{len(actions)} \n\n')
 
-    hex.make_move(2)
+    hex.make_move(0)
+    hex.make_move(5)
+
     hex.make_move(1)
+    hex.make_move(6)
+
+    hex.make_move(2)
+    hex.make_move(7)
+
+    hex.make_move(3)
+    hex.make_move(8)
+
+    hex.make_move(3)
+    hex.make_move(2)
+
+    hex.make_move(7)
+    hex.make_move(4)
+
+    hex.make_move(11)
     hex.make_move(10)
+
+    hex.make_move(15)
+    hex.make_move(8)
     hex.render()
+    print(hex.is_game_over())
 
     # mcts.run()
