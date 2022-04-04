@@ -94,7 +94,7 @@ class Hex:
         for i in range(len(board_state)):
             c = i % self.SIZE
             r = np.floor_divide(i, self.SIZE)
-            self.cells[r, c] = tuple(board_state[i].tolist())
+            self.cells[r, c].piece = tuple(board_state[i].tolist())
 
     def get_legal_actions(self):
         return np.argwhere(np.all(self.state['board_state'] == 0, axis=1) == True).ravel()
@@ -103,7 +103,7 @@ class Hex:
         return np.argwhere(np.all(state['board_state'] == 0, axis=1) == True).ravel()
 
     def get_all_actions(self):
-        return np.array([range(self.SIZE ** 2)])
+        return np.array(range(self.SIZE ** 2))
 
     def make_move(self, action):
         if self.is_game_over():
@@ -164,17 +164,21 @@ class Hex:
         return game
 
     def step_(self, state, action):
-        new_state = copy.copy(state)
+        new_state = {
+            'board_state': copy.copy(state['board_state']),
+            'pid': copy.copy(state['pid'])
+        }
         if action not in self.get_legal_actions_(state):
             return
         else:
             piece = (1, 0) if new_state['pid'] == 1 else (0, 1)
             new_state['board_state'][action, :] = np.array(piece)
-        new_state['pid'] = 3 - new_state.state['pid']
+        new_state['pid'] = 3 - new_state['pid']
+        return new_state
 
     def generate_children_(self, state):
         edges = [action for action in self.get_legal_actions_(state)]
-        illegal_edges = list(set(edges) ^ set(self.get_all_actions()))
+        illegal_edges = np.setxor1d(np.array(edges), self.get_all_actions()).tolist()
         illegal_children = [None for _ in illegal_edges]
         children = [self.step_(state, action) for action in edges]
         return edges, children, illegal_edges, illegal_children

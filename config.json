@@ -6,7 +6,8 @@
   "u_factor":                     1.00,
 
   "learning_rate":                0.001,
-  "nn_dims":                      [1024, 512, 32, 16],
+  "in_shape":                     19,
+  "nn_dims":                      [1024, 512, 32, 9],
   "hidden_act_func":              "relu",
   "optimizer":                    "Adam",
   "M":                            4,

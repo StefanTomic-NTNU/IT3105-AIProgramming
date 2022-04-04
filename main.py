@@ -26,9 +26,8 @@ if __name__ == '__main__':
     hex = Hex(config['hex_size'], init_player=2)
     nim = Nim(config['nim_pieces'], config['nim_k'])
 
-
-
-    nn = NeuralNet(lrate=config['learning_rate'], nn_dims=tuple(config['nn_dims']),
+    nn = NeuralNet(lrate=config['learning_rate'], in_shape=(config['in_shape'], ),
+                   nn_dims=tuple(config['nn_dims']),
                    hidden_act_func=config['hidden_act_func'], optimizer=config['optimizer'],
                    episodes_per_game=episodes_per_game, checkpoint_path=config['checkpoint_path'])
     mcts = MCTS(episodes, config['nr_search_games'], hex, config['nn_dims'][0], nn,

@@ -85,7 +85,9 @@ class MCTS:
                     grey_node = node
                     while node.state and not board_mc.is_game_over():
                         self.generate_children(node)
-                        nn_input = np.array([node.state['board_state'], node.state['pid']])
+
+                        nn_input = np.concatenate((np.ravel(node.state['board_state']), np.array([node.state['pid']], dtype='float')))
+                        # nn_input = np.array([node.state['board_state'], node.state['pid']])
                         nn_input = nn_input.reshape(1, -1)
                         action, action_index = self.pick_action(nn_input, node)
                         if not board_mc.is_game_over():
@@ -115,31 +117,33 @@ class MCTS:
                             child.edges = []
                             child.children = []
 
-                root_state = np.array([root.state['board_state'], root.state['pid']])
+                # root_state = np.array([root.state['board_state'], root.state['pid']])
+                root_state = np.concatenate((np.ravel(root.state['board_state']), np.array([root.state['pid']], dtype='float')))
                 root_state = root_state.reshape(1, -1)
                 D = copy.copy(normalize(np.array([root.N_a])))
                 case = (root_state, D)
                 self.replay_buffer.append(case)
-                self.prob_disc_dict[(root.state['board_state'], root.state['pid'])] = D
+                # self.prob_disc_dict[(root.state['board_state'], root.state['pid'])] = D
                 action, action_index = self.pick_action(case[0], root)
                 board_a.make_move(action)
                 root = root.children[action_index]
                 root.parent = None
             batch_size = len(self.replay_buffer)
-            number_from_batch = random.randrange(math.ceil(batch_size/5), batch_size)
+            number_from_batch = random.randrange(math.floor(batch_size/5), batch_size)
+            if number_from_batch == 0: number_from_batch = 1
             subbatch = random.sample(self.replay_buffer, number_from_batch)
 
             ex_batch_x = subbatch[0][0][0]
             ex_batch_y = subbatch[0][1][0]
 
-            op_batch_x = np.zeros((len(self.prob_disc_dict), len(ex_batch_x)))
-            op_batch_y = np.zeros((len(self.prob_disc_dict), len(ex_batch_y)))
+            # op_batch_x = np.zeros((len(self.prob_disc_dict), len(ex_batch_x)))
+            # op_batch_y = np.zeros((len(self.prob_disc_dict), len(ex_batch_y)))
 
-            i = 0
-            for key in self.prob_disc_dict.keys():
-                op_batch_x[i, :] = np.array(list(key))
-                op_batch_y[i, :] = np.array(self.prob_disc_dict[key])
-                i += 1
+            # i = 0
+            # for key in self.prob_disc_dict.keys():
+            #     op_batch_x[i, :] = np.array(list(key))
+            #     op_batch_y[i, :] = np.array(self.prob_disc_dict[key])
+            #     i += 1
 
             # TODO: Mål tid, effektiviser?
 
