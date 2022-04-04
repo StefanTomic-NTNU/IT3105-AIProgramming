@@ -3,6 +3,7 @@ import json
 from mcts import MCTS, TreeNode
 from neuralnet import NeuralNet
 from rl_system import ReinforcementLearningSystem
+from simworld.hex_board import Hex
 from simworld.nim import Nim
 import numpy as np
 
@@ -18,13 +19,25 @@ def read_config():
 if __name__ == '__main__':
     config = read_config()
 
-    game = Nim(config['nim_pieces'], config['nim_k'])
+    episodes = config['nr_episodes']
+    M = config['M']
+    episodes_per_game = round(episodes / M)
+
+    hex = Hex(config['hex_size'])
+    nim = Nim(config['nim_pieces'], config['nim_k'])
     nn = NeuralNet(lrate=config['learning_rate'], nn_dims=tuple(config['nn_dims']),
                    hidden_act_func=config['hidden_act_func'], optimizer=config['optimizer'],
-                   M=config['M'])
-    mcts = MCTS(config['nr_episodes'], config['nr_search_games'], game, config['nn_dims'][0], nn)
+                   episodes_per_game=episodes_per_game, checkpoint_path=config['checkpoint_path'])
+    mcts = MCTS(episodes, config['nr_search_games'], nim, config['nn_dims'][0], nn,
+                exploration_rate=config['init_exploration_rate'],
+                exploration_rate_decay_fact=config['exploration_rate_decay_fact'])
 
     rl_system = ReinforcementLearningSystem()
     topp = Tournament()
 
-    mcts.run()
+    hex.cells[0, 0].piece = (1, 0)
+    hex.cells[2, 2].piece = (0, 1)
+    hex.cells[4, 0].piece = (1, 0)
+    hex.render()
+
+    # mcts.run()

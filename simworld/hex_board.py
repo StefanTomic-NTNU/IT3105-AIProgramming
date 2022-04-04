@@ -4,11 +4,12 @@ import numpy as np
 class Cell:
     def __init__(self):
         self.neighbors = []
-        self.piece = None
+        self.piece: tuple = (0, 0)
 
 
 class Hex:
     def __init__(self, size):
+        self.pid = 1
         self.size = size
         self.cells = np.empty([size, size], dtype=object)
         for r in range(size):
@@ -44,10 +45,21 @@ class Hex:
             for c in range(self.size):
                 print_index = (r + c) * 2
 
-                if '*' in print_list[print_index]:
-                    print_list[print_index] += '----- * '
+                if self.cells[r, c].piece == (0, 0):
+                    symbol = '*'
+                elif self.cells[r, c].piece == (1, 0):
+                    symbol = 'o'
+                elif self.cells[r, c].piece == (0, 1):
+                    symbol = 'x'
                 else:
-                    print_list[print_index] += ' * '
+                    raise Exception
+
+                if '*' in print_list[print_index] \
+                        or 'o' in print_list[print_index] \
+                        or 'x' in print_list[print_index]:
+                    print_list[print_index] += f'----- {symbol} '
+                else:
+                    print_list[print_index] += f' {symbol} '
 
         for r in range(len(print_list)):
             if r % 2 == 1:
@@ -59,17 +71,8 @@ class Hex:
         for row in print_list:
             print(row)
 
-
-        # print_list = []
-        # for r in range(self.size):
-        #     print_row = ''
-        #     for c in range(self.size):
-        #         print_row += '*\t'
-        #
-        #     print_list.append(print_row)
-        #
-        # for row in print_list:
-        #     print(row)
+    def get_state(self):
+        pass
 
 
 if __name__ == '__main__':

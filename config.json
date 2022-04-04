@@ -1,6 +1,6 @@
 {
   "nr_episodes":                  200,
-  "nr_search_games":              500,
+  "nr_search_games":              100,
   "init_exploration_rate":        0.50,
   "exploration_rate_decay_fact":  0.98,
   "u_factor":                     1.00,
@@ -9,11 +9,12 @@
   "nn_dims":                      [1024, 512, 32, 2],
   "hidden_act_func":              "relu",
   "optimizer":                    "Adam",
-  "M":                            10,
-  "nr_topp_games":                5,
+  "M":                            4,
+  "nr_topp_games":                25,
+  "checkpoint_path":              "models/checkpoint-{episode:04d}.ckpt",
 
   "hex_size":                     5,
 
-  "nim_pieces":                   10,
+  "nim_pieces":                   20,
   "nim_k":                        2
 }

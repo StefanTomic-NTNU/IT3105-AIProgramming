@@ -35,7 +35,8 @@ class TreeNode:
 
 
 class MCTS:
-    def __init__(self, number_actual_games, number_search_games, game: Nim, nr_actions, nn):
+    def __init__(self, number_actual_games, number_search_games, game, nr_actions, nn,
+                 exploration_rate=0.50, exploration_rate_decay_fact=0.98):
         self.number_actual_games = number_actual_games
         self.number_search_games = number_search_games
         self.game = game
@@ -43,8 +44,8 @@ class MCTS:
         self.model = nn
         self.replay_buffer = []
         self.prob_disc_dict = {}
-        self.exploration_rate = 0.50
-        self.exploration_rate_decay_fact = 0.95
+        self.exploration_rate = exploration_rate
+        self.exploration_rate_decay_fact = exploration_rate_decay_fact
 
         # Include the epoch in the file name (uses `str.format`)
         self.checkpoint_path = "models/cp-{epoch:04d}.ckpt"
@@ -129,14 +130,16 @@ class MCTS:
             ex_batch_x = subbatch[0][0][0]
             ex_batch_y = subbatch[0][1][0]
 
-            op_batch_x = np.zeros((len(self.prob_disc_dict), 2))
-            op_batch_y = np.zeros((len(self.prob_disc_dict), 2))
+            op_batch_x = np.zeros((len(self.prob_disc_dict), len(ex_batch_x)))
+            op_batch_y = np.zeros((len(self.prob_disc_dict), len(ex_batch_y)))
 
             i = 0
             for key in self.prob_disc_dict.keys():
                 op_batch_x[i, :] = np.array(list(key))
                 op_batch_y[i, :] = np.array(self.prob_disc_dict[key])
                 i += 1
+
+            # TODO: Mål tid, effektiviser?
 
             batch_x = np.zeros((number_from_batch, len(ex_batch_x)))
             for i in range(number_from_batch):
@@ -147,9 +150,9 @@ class MCTS:
             # for i in range(len(self.replay_buffer)):
             #     print(self.replay_buffer[i])
 
-            self.model.fit(x=batch_x, y=batch_y, callbacks=[self.cp_callback])
+            self.model.fit(x=batch_x, y=batch_y)
             self.exploration_rate *= self.exploration_rate_decay_fact
-        self.model.save(self.checkpoint_path.format(epoch=1337))
+#        self.model.save(self.checkpoint_path.format(epoch=1337))
 
         # "OPTIMAL" GAME
         self.exploration_rate = 0
@@ -216,7 +219,7 @@ class MCTS:
 
     def get_greedy_action(self, state, node: TreeNode, verbose=False):
         action_tensor = self.model.predict(state)
-        action_dist = action_tensor.numpy()[0]  #TODO: Change to argmax for pid 1 and 2
+        action_dist = action_tensor.numpy()[0]
         action_index = np.argmax(action_dist)
         while node.children[action_index].is_illegal or action_index >= len(node.edges):
             action_dist[action_index] = 0
@@ -248,18 +251,6 @@ class MCTS:
                 if np.sum(combined) == 100000 * self.nr_actions:
                     return None
         return policy
-
-    def gennet(self, num_classes=2, lrate=1, optimizer='SGD', loss='categorical_crossentropy', in_shape=(2,)):
-        optimizer = eval('KER.optimizers.' + optimizer)
-        loss = eval('KER.losses.' + loss) if type(loss) == str else loss
-
-        model = KER.Sequential()
-        model.add(KER.layers.Dense(128, input_shape=in_shape, activation='relu', name='input_layer'))
-        model.add(KER.layers.Dense(64, activation='relu', name='middle_layer1'))
-        model.add(KER.layers.Dense(num_classes, activation='softmax', name='output_layer'))
-
-        model.compile(optimizer=optimizer(learning_rate=lrate), loss=loss, metrics=[KER.metrics.categorical_accuracy])
-        return model
 
 
 def normalize(arr: np.array):

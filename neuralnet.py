@@ -4,11 +4,15 @@ from tensorflow import keras as KER
 
 class NeuralNet:
     def __init__(self, lrate=0.01, optimizer='SGD', loss='categorical_crossentropy', in_shape=(2,),
-                 nn_dims=(1024, 512, 32, 1), hidden_act_func='relu', M=10):
+                 nn_dims=(1024, 512, 32, 1), hidden_act_func='relu', episodes_per_game=50,
+                 checkpoint_path='models/cp-{epoch:04d}.ckpt'):
         self.model = self.gennet(lrate=lrate, optimizer=optimizer, loss=loss, in_shape=in_shape,
-                                 nn_dims=nn_dims, hidden_act_func=hidden_act_func, M=M)
+                                 nn_dims=nn_dims, hidden_act_func=hidden_act_func)
+        self.episodes_per_game = episodes_per_game
+        self.episode_count = 0
+        self.checkpoint_path = checkpoint_path
 
-    def gennet(self, lrate, optimizer, loss, in_shape, nn_dims, hidden_act_func, M):
+    def gennet(self, lrate, optimizer, loss, in_shape, nn_dims, hidden_act_func):
         optimizer = eval('KER.optimizers.' + optimizer)
         loss = eval('KER.losses.' + loss) if type(loss) == str else loss
 
@@ -22,11 +26,14 @@ class NeuralNet:
         model.compile(optimizer=optimizer(learning_rate=lrate), loss=loss, metrics=[KER.metrics.categorical_accuracy])
         return model
 
-    def predict(self, state):
+    def predict(self, state):   # TODO: Implement Lite Shit
         return self.model(state)
 
     def fit(self, x, y, callbacks=None):
+        if self.episode_count == 0: self.save()
+        self.episode_count += 1
         self.model.fit(x=x, y=y, callbacks=callbacks)
+        if self.episode_count % self.episodes_per_game == 0: self.save()
 
-    def save(self, path):
-        pass
+    def save(self):
+        self.model.save(self.checkpoint_path.format(episode=self.episode_count))
