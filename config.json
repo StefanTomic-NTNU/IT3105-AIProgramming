@@ -1,5 +1,5 @@
 {
-  "nr_episodes":                  0,
+  "nr_episodes":                  300,
   "nr_search_games":              100,
   "init_exploration_rate":        0.50,
   "exploration_rate_decay_fact":  0.98,
@@ -12,11 +12,11 @@
   "optimizer":                    "Adam",
   "M":                            4,
   "nr_topp_games":                25,
-  "checkpoint_path":              "checkpoint-{episode:04d}.ckpt",
+  "checkpoint_path":              "tournament-checkpoint-{episode:04d}.ckpt",
 
   "game":                         "hex",
 
-  "hex_size":                     4,
+  "hex_size":                     5,
 
   "nim_pieces":                   10,
   "nim_k":                        2

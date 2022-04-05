@@ -181,7 +181,7 @@ class MCTS:
 
         # "OPTIMAL" GAME
         self.exploration_rate = 0
-        self.model.load_weights(100)
+        # self.model.load_weights(100)
         for init_player in (1, 2):
             final_game = self.game.create_copy()
             final_game.state['pid'] = init_player
@@ -200,14 +200,13 @@ class MCTS:
                 # print(f'Action {action}')
                 final_game.make_move(action)
             final_game.render()
-            print(f'\t Player: {final_game.state["pid"]}')
             winner = 3 - final_game.state['pid']
             print(f'Winner is player {winner}\n\n')
         runtime_end = time.time()
         runtime = runtime_end - runtime_start
         minutes = np.floor_divide(runtime, 60)
         seconds = runtime % 60
-        print(f'\nRuntime: {minutes}m, {seconds}s')
+        print(f'\nRuntime: {minutes:.0f}m, {seconds:.2f}s')
 
     def generate_children(self, tree_node: TreeNode):
         if len(tree_node.children) == 0 and tree_node.state:
@@ -280,7 +279,5 @@ class MCTS:
         return policy
 
 
-def normalize(arr: np.array):   # TODO: Figure out why all 0's and nan
-    # print(f' ARR: {arr}')
-    # print(np.sum(arr))
+def normalize(arr: np.array):
     return arr/np.sum(arr)

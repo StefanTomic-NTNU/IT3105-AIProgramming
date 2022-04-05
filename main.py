@@ -20,7 +20,7 @@ if __name__ == '__main__':
     config = read_config()
 
     episodes = config['nr_episodes']
-    M = config['M']
+    M = config['M'] - 1
     episodes_per_game = round(episodes / M)
 
     nn_dims = config['nn_dims']
@@ -52,7 +52,6 @@ if __name__ == '__main__':
                 exploration_rate=config['init_exploration_rate'],
                 exploration_rate_decay_fact=config['exploration_rate_decay_fact'])
 
-    rl_system = ReinforcementLearningSystem()
-    topp = Tournament()
+    topp = Tournament(config['nr_topp_games'], checkpoint_path, M, episodes_per_game, game)
 
     mcts.run()

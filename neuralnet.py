@@ -5,12 +5,14 @@ from tensorflow import keras as KER
 class NeuralNet:
     def __init__(self, lrate=0.01, optimizer='SGD', loss='categorical_crossentropy', in_shape=(2,),
                  nn_dims=(1024, 512, 32, 1), hidden_act_func='relu', episodes_per_game=50,
-                 checkpoint_path='models/cp-{epoch:04d}.ckpt'):
+                 checkpoint_path='models/cp-{epoch:04d}.ckpt', label='', victories=0):
         self.model = self.gennet(lrate=lrate, optimizer=optimizer, loss=loss, in_shape=in_shape,
                                  nn_dims=nn_dims, hidden_act_func=hidden_act_func)
         self.episodes_per_game = episodes_per_game
         self.episode_count = 0
         self.checkpoint_path = checkpoint_path
+        self.label = label
+        self.victories = victories
 
     def gennet(self, lrate, optimizer, loss, in_shape, nn_dims, hidden_act_func):
         optimizer = eval('KER.optimizers.' + optimizer)
