@@ -1,18 +1,18 @@
 {
   "nr_episodes":                  300,
-  "nr_search_games":              100,
+  "nr_search_games":              1000,
   "init_exploration_rate":        0.50,
-  "exploration_rate_decay_fact":  0.98,
+  "exploration_rate_decay_fact":  0.988,
   "u_factor":                     1.00,
 
   "learning_rate":                0.001,
-  "in_shape":                     33,
+  "in_shape":                     1,
   "nn_dims":                      [1024, 512, 32, 16],
   "hidden_act_func":              "relu",
   "optimizer":                    "Adam",
-  "M":                            4,
+  "M":                            11,
   "nr_topp_games":                25,
-  "checkpoint_path":              "tournament-checkpoint-{episode:04d}.ckpt",
+  "checkpoint_path":              "overnight-{episode:04d}.ckpt",
 
   "game":                         "hex",
 

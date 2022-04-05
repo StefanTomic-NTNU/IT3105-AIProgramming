@@ -27,7 +27,7 @@ if __name__ == '__main__':
     game_name = config['game']
     if game_name == 'hex' or game_name == 'Hex':
         size = config['hex_size']
-        game = Hex(size)
+        game = Hex(size, init_player=1)
         checkpoint_path = 'models/hex' + \
                           str(config['hex_size']) + '/' + \
                           config['checkpoint_path']
@@ -52,6 +52,10 @@ if __name__ == '__main__':
                 exploration_rate=config['init_exploration_rate'],
                 exploration_rate_decay_fact=config['exploration_rate_decay_fact'])
 
-    topp = Tournament(config['nr_topp_games'], checkpoint_path, M, episodes_per_game, game)
+    topp = Tournament(config['nr_topp_games'], checkpoint_path, M, episodes_per_game, game,
+                      in_shape=in_shape, nn_dims=nn_dims)
 
     mcts.run()
+
+    topp.load_models()
+    topp.play_tournament()

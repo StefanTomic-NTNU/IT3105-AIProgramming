@@ -42,4 +42,8 @@ class NeuralNet:
         self.model.save(self.checkpoint_path.format(episode=self.episode_count))
 
     def load_weights(self, episode_count):
-        self.model.load_weights(self.checkpoint_path.format(episode=episode_count))
+        # print('\nBefore: ')
+        # print(self.model.layers[0].get_weights()[0])
+        self.model = tf.keras.models.load_model(self.checkpoint_path.format(episode=episode_count))
+        # print('After:')
+        # print(self.model.layers[0].get_weights()[0])
