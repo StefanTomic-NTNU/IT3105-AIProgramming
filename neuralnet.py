@@ -36,6 +36,7 @@ class NeuralNet:
         if self.episode_count % self.episodes_per_game == 0: self.save()
 
     def save(self):
+        print('Saving model...\n')
         self.model.save(self.checkpoint_path.format(episode=self.episode_count))
 
     def load_weights(self, episode_count):

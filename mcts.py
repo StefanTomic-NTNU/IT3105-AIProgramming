@@ -6,6 +6,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras as KER
 import matplotlib.pyplot as plt
+import time
 
 from simworld.nim import Nim
 
@@ -59,17 +60,22 @@ class MCTS:
             save_freq=20)
 
     def run(self):
+        runtime_start = time.time()
         for g_a in range(self.number_actual_games):
             board_a = self.game.create_copy()
             root = TreeNode(board_a.get_state())
+            episode_start_time = time.time()
+
+            rollout_time = 0
+            tree_policy_time = 0
             while not board_a.is_game_over():
                 board_mc = self.game.create_copy()
                 board_mc.set_state(root.state)
-
                 for g_s in range(self.number_search_games):
                     board_mc = self.game.create_copy()
                     board_mc.set_state(root.state)
 
+                    tree_policy_time_start = time.time()
                     # TREE POLICY
                     node = root
                     while node.children and not node.is_at_end():
@@ -80,9 +86,12 @@ class MCTS:
                         node = node.children[chosen_node]
 
                     self.generate_children(node)    # Blue nodes
+                    tree_policy_time_end = time.time()
+                    tree_policy_time += tree_policy_time_end - tree_policy_time_start
 
                     # ROLLOUT
                     grey_node = node
+                    single_rollout_start = time.time()
                     while node.state and not board_mc.is_game_over():
                         self.generate_children(node)
 
@@ -93,6 +102,8 @@ class MCTS:
                         if not board_mc.is_game_over():
                             board_mc.make_move(action)
                             node = node.children[action_index]
+                    single_rollout_end = time.time()
+                    rollout_time += single_rollout_end - single_rollout_start
 
                     # BACKPROPAGATION
                     evaluation = -1 if board_mc.state['pid'] == 1 else 1
@@ -128,6 +139,8 @@ class MCTS:
                 board_a.make_move(action)
                 root = root.children[action_index]
                 root.parent = None
+
+            batching_time_start = time.time()
             batch_size = len(self.replay_buffer)
             number_from_batch = random.randrange(math.floor(batch_size/5), batch_size)
             if number_from_batch == 0: number_from_batch = 1
@@ -145,8 +158,6 @@ class MCTS:
             #     op_batch_y[i, :] = np.array(self.prob_disc_dict[key])
             #     i += 1
 
-            # TODO: Mål tid, effektiviser?
-
             batch_x = np.zeros((number_from_batch, len(ex_batch_x)))
             for i in range(number_from_batch):
                 batch_x[i, :] = subbatch[i][0]
@@ -154,12 +165,23 @@ class MCTS:
             for i in range(number_from_batch):
                 batch_y[i, :] = subbatch[i][1]
 
+            batching_time_end = time.time()
+
+            training_time_start = time.time()
             self.model.fit(x=batch_x, y=batch_y)
+            training_time_end = time.time()
             self.exploration_rate *= self.exploration_rate_decay_fact
+            episode_end_time = time.time()
+            print(f'Episode {g_a}/{self.number_actual_games} '
+                  f'time: {(episode_end_time - episode_start_time):.4f}s, '
+                  f'\trollout-time: {rollout_time:.4f}s, '
+                  f'\ttraining-time: {(training_time_end - training_time_start):.4f}s, '
+                  f'\ttree-policy-time: {tree_policy_time:.4f}s, '
+                  f'\tbatching-time: {(batching_time_end - batching_time_start):.4f}s\n')
 
         # "OPTIMAL" GAME
         self.exploration_rate = 0
-        self.model.load_weights(248)
+        self.model.load_weights(100)
         for init_player in (1, 2):
             final_game = self.game.create_copy()
             final_game.state['pid'] = init_player
@@ -181,17 +203,11 @@ class MCTS:
             print(f'\t Player: {final_game.state["pid"]}')
             winner = 3 - final_game.state['pid']
             print(f'Winner is player {winner}\n\n')
-
-            # print(f'Model predictions: ')
-            # for i in range(1, 11):
-            #     node = TreeNode({'board_state': i, 'pid': init_player})
-            #     print(f'State: [{i}, {init_player}]')
-            #     self.generate_children(node)
-            #     state = np.array([i, init_player])
-            #     state = state.reshape(1, -1)
-            #     action, action_index = self.pick_action(state, node, verbose=True)
-            #     if (i, init_player) in self.prob_disc_dict:
-            #         print(f'Training case extreme: {self.prob_disc_dict[(i, init_player)]}\n')
+        runtime_end = time.time()
+        runtime = runtime_end - runtime_start
+        minutes = np.floor_divide(runtime, 60)
+        seconds = runtime % 60
+        print(f'\nRuntime: {minutes}m, {seconds}s')
 
     def generate_children(self, tree_node: TreeNode):
         if len(tree_node.children) == 0 and tree_node.state:
