@@ -61,7 +61,7 @@ class MCTS:
     def run(self):
         for g_a in range(self.number_actual_games):
             board_a = self.game.create_copy()
-            root = TreeNode(copy.copy(board_a.state))
+            root = TreeNode(board_a.get_state())
             while not board_a.is_game_over():
                 board_mc = self.game.create_copy()
                 board_mc.set_state(root.state)
@@ -153,42 +153,45 @@ class MCTS:
             batch_y = np.zeros((number_from_batch, len(ex_batch_y)))
             for i in range(number_from_batch):
                 batch_y[i, :] = subbatch[i][1]
-            # for i in range(len(self.replay_buffer)):
-            #     print(self.replay_buffer[i])
 
             self.model.fit(x=batch_x, y=batch_y)
             self.exploration_rate *= self.exploration_rate_decay_fact
-#        self.model.save(self.checkpoint_path.format(epoch=1337))
 
         # "OPTIMAL" GAME
         self.exploration_rate = 0
-        # self.model.load_weights(200)
+        self.model.load_weights(248)
         for init_player in (1, 2):
             final_game = self.game.create_copy()
-            self.game.state['pid'] = init_player
+            final_game.state['pid'] = init_player
+            print(init_player)
             while not final_game.is_game_over():
-                print(f'Final game pieces: {final_game.state["board_state"]} \t Player: {final_game.state["pid"]}')
+                final_game.render()
+                # print(f'Final game pieces: {final_game.state["board_state"]} \t Player: {final_game.state["pid"]}')
                 node = TreeNode(final_game.state)
                 self.generate_children(node)
-                state = np.array([final_game.state['board_state'], final_game.state['pid']])
+                state = np.concatenate(
+                    (np.ravel(final_game.state['board_state']), np.array([final_game.state['pid']], dtype='float')))
+
+                # state = np.array([final_game.state['board_state'], final_game.state['pid']])
                 state = state.reshape(1, -1)
                 action, action_index = self.pick_action(state, node)
-                print(f'Action {action}')
+                # print(f'Action {action}')
                 final_game.make_move(action)
-            print(f'Final game pieces: {final_game.state["board_state"]} \t Player: {final_game.state["pid"]}')
+            final_game.render()
+            print(f'\t Player: {final_game.state["pid"]}')
             winner = 3 - final_game.state['pid']
             print(f'Winner is player {winner}\n\n')
 
-            print(f'Model predictions: ')
-            for i in range(1, 11):
-                node = TreeNode({'board_state': i, 'pid': init_player})
-                print(f'State: [{i}, {init_player}]')
-                self.generate_children(node)
-                state = np.array([i, init_player])
-                state = state.reshape(1, -1)
-                action, action_index = self.pick_action(state, node, verbose=True)
-                if (i, init_player) in self.prob_disc_dict:
-                    print(f'Training case extreme: {self.prob_disc_dict[(i, init_player)]}\n')
+            # print(f'Model predictions: ')
+            # for i in range(1, 11):
+            #     node = TreeNode({'board_state': i, 'pid': init_player})
+            #     print(f'State: [{i}, {init_player}]')
+            #     self.generate_children(node)
+            #     state = np.array([i, init_player])
+            #     state = state.reshape(1, -1)
+            #     action, action_index = self.pick_action(state, node, verbose=True)
+            #     if (i, init_player) in self.prob_disc_dict:
+            #         print(f'Training case extreme: {self.prob_disc_dict[(i, init_player)]}\n')
 
     def generate_children(self, tree_node: TreeNode):
         if len(tree_node.children) == 0 and tree_node.state:
@@ -261,5 +264,7 @@ class MCTS:
         return policy
 
 
-def normalize(arr: np.array):
+def normalize(arr: np.array):   # TODO: Figure out why all 0's and nan
+    # print(f' ARR: {arr}')
+    # print(np.sum(arr))
     return arr/np.sum(arr)

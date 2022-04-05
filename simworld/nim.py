@@ -36,6 +36,9 @@ class Nim:
     def set_state(self, state):
         self.state = copy.copy(state)
 
+    def get_state(self):
+        return copy.copy(self.state)
+
     def get_legal_actions(self):
         return tuple(list(range(1, self.state['board_state']+1))) if self.K > self.state['board_state'] else tuple(list(range(1, self.K + 1)))
 

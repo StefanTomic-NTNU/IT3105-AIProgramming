@@ -85,21 +85,29 @@ class Hex:
         pieces = np.empty((self.SIZE ** 2, 2))
         for r in range(self.SIZE):
             for c in range(self.SIZE):
-                pieces[r * self.SIZE + c, :] = self.cells[r, c].piece
+                pieces[r * self.SIZE + c, :] = copy.copy(self.cells[r, c].piece)
         return pieces
 
     def set_state(self, state):
-        self.state = copy.copy(state)
-        board_state = state['board_state']
+        self.state = copy.copy(state)   # TODO: Change
+        board_state = state['board_state'].copy()
         for i in range(len(board_state)):
             c = i % self.SIZE
             r = np.floor_divide(i, self.SIZE)
             self.cells[r, c].piece = tuple(board_state[i].tolist())
 
+    def get_state(self):
+        new_state = {
+            'board_state': self.state['board_state'].copy(),
+            'pid': copy.copy(self.state['pid'])
+        }
+        return copy.copy(new_state)
+
     def get_legal_actions(self):
         return np.argwhere(np.all(self.state['board_state'] == 0, axis=1) == True).ravel()
 
     def get_legal_actions_(self, state):
+        # print(state['board_state'])
         return np.argwhere(np.all(state['board_state'] == 0, axis=1) == True).ravel()
 
     def get_all_actions(self):
@@ -107,7 +115,7 @@ class Hex:
 
     def make_move(self, action):
         if self.is_game_over():
-            print('Game is over')
+            # print('Game is over')
             return
         if action not in self.get_legal_actions():
             return
@@ -123,9 +131,9 @@ class Hex:
         if self.state is None: return True
         queued_cells = []
         explored_cells = []
-        for c in range(self.SIZE):
+        for c in range(self.SIZE):  # Vertical connection for player 1
             cell = self.cells[0, c]
-            if cell.piece == (1, 0):
+            if cell.piece == (0, 1):
                 queued_cells.append(cell)
         while queued_cells:
             cell = queued_cells[0]
@@ -139,9 +147,9 @@ class Hex:
             explored_cells.append(cell)
             queued_cells.pop(0)
 
-        for r in range(self.SIZE):
+        for r in range(self.SIZE):  # Horizontal connection for player 2
             cell = self.cells[r, 0]
-            if cell.piece == (0, 1):
+            if cell.piece == (1, 0):
                 queued_cells.append(cell)
         while queued_cells:
             cell = queued_cells[0]
@@ -157,15 +165,24 @@ class Hex:
 
         return False
 
+    def is_game_over_(self, state):
+        board = self.create_copy()
+        board.set_state(state)
+        return board.is_game_over()
+
     def create_copy(self):
         game = Hex(self.SIZE, init_player=self.state['pid'])
-        game.cells = copy.copy(self.cells)
-        game.state = copy.copy(self.state)
+        for r in range(self.SIZE):
+            for c in range(self.SIZE):
+                game.cells[r, c].piece = copy.copy(self.cells[r, c].piece)
+        game.state['board_state'] = game.simplify_state()
         return game
 
     def step_(self, state, action):
+        if self.is_game_over_(state):
+            return
         new_state = {
-            'board_state': copy.copy(state['board_state']),
+            'board_state': state['board_state'].copy(),
             'pid': copy.copy(state['pid'])
         }
         if action not in self.get_legal_actions_(state):

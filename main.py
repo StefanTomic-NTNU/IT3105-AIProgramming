@@ -30,7 +30,7 @@ if __name__ == '__main__':
                    nn_dims=tuple(config['nn_dims']),
                    hidden_act_func=config['hidden_act_func'], optimizer=config['optimizer'],
                    episodes_per_game=episodes_per_game, checkpoint_path=config['checkpoint_path'])
-    mcts = MCTS(episodes, config['nr_search_games'], hex, config['nn_dims'][0], nn,
+    mcts = MCTS(episodes, config['nr_search_games'], hex, config['nn_dims'][-1], nn,
                 exploration_rate=config['init_exploration_rate'],
                 exploration_rate_decay_fact=config['exploration_rate_decay_fact'])
 
