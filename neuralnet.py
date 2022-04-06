@@ -1,3 +1,6 @@
+import time
+
+import numpy as np
 import tensorflow as tf
 from tensorflow import keras as KER
 
@@ -6,6 +9,7 @@ class NeuralNet:
     def __init__(self, lrate=0.01, optimizer='SGD', loss='categorical_crossentropy', in_shape=(2,),
                  nn_dims=(1024, 512, 32, 1), hidden_act_func='relu', episodes_per_game=50,
                  checkpoint_path='models/cp-{epoch:04d}.ckpt', label='', victories=0):
+        tf.get_logger().setLevel('INFO')
         self.model = self.gennet(lrate=lrate, optimizer=optimizer, loss=loss, in_shape=in_shape,
                                  nn_dims=nn_dims, hidden_act_func=hidden_act_func)
         self.episodes_per_game = episodes_per_game
@@ -13,6 +17,7 @@ class NeuralNet:
         self.checkpoint_path = checkpoint_path
         self.label = label
         self.victories = victories
+        self.lite_model = LiteModel.from_keras_model(self.model)
 
     def gennet(self, lrate, optimizer, loss, in_shape, nn_dims, hidden_act_func):
         optimizer = eval('KER.optimizers.' + optimizer)
@@ -29,22 +34,28 @@ class NeuralNet:
         return model
 
     def predict(self, state):
-        return self.model(state)
+        # return self.model(state)
+        return self.lite_model.predict(state)
 
     def fit(self, x, y, callbacks=None):
         if self.episode_count == 0: self.save()
         self.episode_count += 1
         self.model.fit(x=x, y=y, callbacks=callbacks)
         if self.episode_count % self.episodes_per_game == 0: self.save()
+        start_time = time.time()
+        self.lite_model = LiteModel.from_keras_model(self.model)
+        end_time = time.time()
+        print(f'Lite model construction time: {(end_time-start_time):.4f}')
 
     def save(self):
         print('Saving model...\n')
         self.model.save(self.checkpoint_path.format(episode=self.episode_count))
 
-    def load_weights(self, episode_count):
+    def load(self, episode_count):
         # print('\nBefore: ')
         # print(self.model.layers[0].get_weights()[0])
         self.model = tf.keras.models.load_model(self.checkpoint_path.format(episode=episode_count))
+        self.lite_model = LiteModel.from_keras_model(self.model)
         # print('After:')
         # print(self.model.layers[0].get_weights()[0])
 

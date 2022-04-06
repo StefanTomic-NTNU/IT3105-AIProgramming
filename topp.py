@@ -1,5 +1,6 @@
 import numpy as np
 
+from actor import Actor
 from mcts import TreeNode
 from neuralnet import NeuralNet
 
@@ -13,12 +14,12 @@ class Tournament:
         self.CHECKPOINT_PATH = checkpoint_path
         self.M = M
         self.EPISODES_PER_GAME = episodes_per_game
-        self.models = []
+        self.actors = []
         self.game = game
         self.in_shape = in_shape
         self.nn_dims = nn_dims
 
-    def load_models(self):
+    def load_actors(self):
         for i in range(self.M + 1):
             number = i * self.EPISODES_PER_GAME
             model = NeuralNet(checkpoint_path=self.CHECKPOINT_PATH,
@@ -26,32 +27,31 @@ class Tournament:
                               label=str(number),
                               in_shape=self.in_shape,
                               nn_dims=self.nn_dims)
-            model.load_weights(number)
-            self.models.append(model)
+            model.load(number)
+            self.actors.append(Actor(model, exploration_rate=0, exploration_rate_decay_fact=1, label=str(number)))
             print(f'\n\n{model.label}')
             print(model.model.layers[0].get_weights()[1])
 
-
     def play_tournament(self):
-        combinations = [(a, b) for idx, a in enumerate(self.models) for b in self.models[idx + 1:]]
+        combinations = [(a, b) for idx, a in enumerate(self.actors) for b in self.actors[idx + 1:]]
         labels = [(pair[0].label, pair[1].label) for pair in combinations]
         scores = {}
 
         print(f'Combinations: {labels}')
 
         for pair in combinations:
-            model1 = pair[0]
-            model2 = pair[1]
-            # model1 = self.models[-1]
-            # model2 = self.models[0]
-            if model1.label not in scores.keys(): scores[model1.label] = 0
-            if model2.label not in scores.keys(): scores[model2.label] = 0
-            print(f'Model1: {model1.label}')
-            print(f'Model2: {model2.label}')
+            actor1 = pair[0]
+            actor2 = pair[1]
+            # actor1 = self.models[-1]
+            # actor2 = self.models[0]
+            if actor1.label not in scores.keys(): scores[actor1.label] = 0
+            if actor2.label not in scores.keys(): scores[actor2.label] = 0
+            print(f'Actor1: {actor1.label}')
+            print(f'Actor2: {actor2.label}')
 
-            first_player = model1
+            first_player = actor1
             for game_i in range(self.NR_TOPP_GAMES):
-                print(f'\n\n GAME {game_i} \t {model1.label} vs {model2.label}\n')
+                print(f'\n\n GAME {game_i} \t {actor1.label} vs {actor2.label}\n')
                 game = self.game.create_copy()
                 next_player = first_player
                 while not game.is_game_over():
@@ -63,18 +63,18 @@ class Tournament:
                         (np.ravel(game.state['board_state']), np.array([game.state['pid']], dtype='float')))
 
                     state = state.reshape(1, -1)
-                    action, action_index = self._get_greedy_action(state, node, next_player)
-                    next_player = model2 if next_player == model1 else model1
+                    action, action_index = next_player.pick_action(state, node)
+                    next_player = actor2 if next_player == actor1 else actor1
                     game.make_move(action)
                 game.render()
-                winner = model2.label if next_player == model1 else model1.label
+                winner = actor2.label if next_player == actor1 else actor1.label
                 print(f'WINNER: {winner}')
                 scores[winner] += 1
-                first_player = model2 if first_player == model1 else model1
+                first_player = actor2 if first_player == actor1 else actor1
 
         print('\n\n --- Tournament of Progressive Policies (TOPP) --- \n')
         print('RESULTS:')
-        [print(f'Model{label}: \t{scores[label]}') for label in scores.keys()]
+        [print(f'Actor{label}: \t{scores[label]}') for label in scores.keys()]
 
     def _generate_children(self, tree_node: TreeNode):
         if len(tree_node.children) == 0 and tree_node.state:
@@ -99,18 +99,3 @@ class Tournament:
             parent.score_a.append(0)
             parent.Q_a.append(0)
             child.parent = parent
-
-    def _get_greedy_action(self, state, node: TreeNode, model, verbose=False):
-        action_tensor = model.predict(state)
-        action_dist = action_tensor.numpy()[0]
-        action_index = np.argmax(action_dist)
-        while node.children[action_index].is_illegal or action_index >= len(node.edges):
-            action_dist[action_index] = 0
-            action_dist = _normalize(action_dist)
-            action_index = np.argmax(action_dist)
-        if verbose: print(f'Action dist: {action_dist}')
-        action = node.edges[action_index]
-        return action, action_index
-
-def _normalize(arr: np.array):
-    return arr / np.sum(arr)

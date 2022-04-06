@@ -1,11 +1,13 @@
 import json
+import os
 
+from actor import Actor
 from mcts import MCTS, TreeNode
 from neuralnet import NeuralNet
-from rl_system import ReinforcementLearningSystem
 from simworld.hex_board import Hex
 from simworld.nim import Nim
 import numpy as np
+import tensorflow as tf
 
 from topp import Tournament
 
@@ -17,6 +19,10 @@ def read_config():
 
 
 if __name__ == '__main__':
+    tf.get_logger().setLevel('WARNING')
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+    # tf.logging.set_verbosity(tf.logging.WARNING)
+
     config = read_config()
 
     episodes = config['nr_episodes']
@@ -48,9 +54,10 @@ if __name__ == '__main__':
                    nn_dims=tuple(nn_dims),
                    hidden_act_func=config['hidden_act_func'], optimizer=config['optimizer'],
                    episodes_per_game=episodes_per_game, checkpoint_path=checkpoint_path)
-    mcts = MCTS(episodes, config['nr_search_games'], game, nn_dims[-1], nn,
-                exploration_rate=config['init_exploration_rate'],
-                exploration_rate_decay_fact=config['exploration_rate_decay_fact'],
+
+    actor = Actor(nn, exploration_rate=config['init_exploration_rate'], exploration_rate_decay_fact=config['exploration_rate_decay_fact'])
+
+    mcts = MCTS(episodes, config['nr_search_games'], game, nn_dims[-1], actor,
                 search_time_limit=config['search_time_limit_s'])
 
     topp = Tournament(config['nr_topp_games'], checkpoint_path, M, episodes_per_game, game,
@@ -59,5 +66,5 @@ if __name__ == '__main__':
     if config['train']:
         mcts.run()
 
-    topp.load_models()
+    topp.load_actors()
     topp.play_tournament()

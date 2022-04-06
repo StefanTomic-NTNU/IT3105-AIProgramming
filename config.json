@@ -1,7 +1,7 @@
 {
-  "train":                        1,
+  "train":                        0,
 
-  "nr_episodes":                  1600,
+  "nr_episodes":                  200,
   "nr_search_games":              1000,
   "search_time_limit_s":          2,
   "init_exploration_rate":        0.50,
@@ -13,12 +13,12 @@
   "hidden_act_func":              "relu",
   "optimizer":                    "SGD",
   "M":                            6,
-  "nr_topp_games":                4,
-  "checkpoint_path":              "test-{episode:04d}.ckpt",
+  "nr_topp_games":                10,
+  "checkpoint_path":              "test2-{episode:04d}.ckpt",
 
   "game":                         "hex",
 
-  "hex_size":                     5,
+  "hex_size":                     4,
 
   "nim_pieces":                   10,
   "nim_k":                        2

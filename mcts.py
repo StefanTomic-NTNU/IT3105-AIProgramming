@@ -36,18 +36,15 @@ class TreeNode:
 
 
 class MCTS:
-    def __init__(self, number_actual_games, number_search_games, game, nr_actions, nn,
-                 exploration_rate=0.50, exploration_rate_decay_fact=0.98, search_time_limit=2):
+    def __init__(self, number_actual_games, number_search_games, game, nr_actions, actor, search_time_limit=2):
         self.number_actual_games = number_actual_games
         self.number_search_games = number_search_games
         self.search_time_limit = search_time_limit
         self.game = game
         self.nr_actions = nr_actions
-        self.model = nn
+        self.actor = actor
         self.replay_buffer = []
         self.prob_disc_dict = {}
-        self.exploration_rate = exploration_rate
-        self.exploration_rate_decay_fact = exploration_rate_decay_fact
         self.gen_game_children_time = 0
 
         # Include the epoch in the file name (uses `str.format`)
@@ -75,8 +72,8 @@ class MCTS:
                 board_mc = self.game.create_copy()
                 board_mc.set_state(root.state)
 
+                g_s_start_time = time.time()
                 for g_s in range(self.number_search_games):
-                    g_s_time = time.time()
                     board_mc = self.game.create_copy()
                     board_mc.set_state(root.state)
 
@@ -108,7 +105,7 @@ class MCTS:
                         nn_input = np.concatenate((np.ravel(node.state['board_state']), np.array([node.state['pid']], dtype='float')))
                         # nn_input = np.array([node.state['board_state'], node.state['pid']])
                         nn_input = nn_input.reshape(1, -1)
-                        action, action_index = self.pick_action(nn_input, node)
+                        action, action_index = self.actor.pick_action(nn_input, node)
                         if not board_mc.is_game_over():
                             board_mc.make_move(action)
                             node = node.children[action_index]
@@ -138,7 +135,8 @@ class MCTS:
                             child.edges = []
                             child.children = []
 
-                    if g_s_time > self.search_time_limit: break
+                    g_s_start_end = time.time()
+                    if g_s_start_end - g_s_start_time > self.search_time_limit: break
 
                 # root_state = np.array([root.state['board_state'], root.state['pid']])
                 root_state = np.concatenate((np.ravel(root.state['board_state']), np.array([root.state['pid']], dtype='float')))
@@ -147,51 +145,52 @@ class MCTS:
                 case = (root_state, D)
                 self.replay_buffer.append(case)
                 # self.prob_disc_dict[(root.state['board_state'], root.state['pid'])] = D
-                action, action_index = self.pick_action(case[0], root)
+                action, action_index = self.actor.pick_action(case[0], root)
                 board_a.make_move(action)
                 root = root.children[action_index]
                 root.parent = None
 
-            batching_time_start = time.time()
-            batch_size = len(self.replay_buffer)
-            number_from_batch = random.randrange(math.floor(batch_size/5), batch_size)
-            if number_from_batch == 0: number_from_batch = 1
-            subbatch = random.sample(self.replay_buffer, number_from_batch)
-
-            ex_batch_x = subbatch[0][0][0]
-            ex_batch_y = subbatch[0][1][0]
-
-            # op_batch_x = np.zeros((len(self.prob_disc_dict), len(ex_batch_x)))
-            # op_batch_y = np.zeros((len(self.prob_disc_dict), len(ex_batch_y)))
-
-            # i = 0
-            # for key in self.prob_disc_dict.keys():
-            #     op_batch_x[i, :] = np.array(list(key))
-            #     op_batch_y[i, :] = np.array(self.prob_disc_dict[key])
-            #     i += 1
-
-            batch_x = np.zeros((number_from_batch, len(ex_batch_x)))
-            for i in range(number_from_batch):
-                batch_x[i, :] = subbatch[i][0]
-            batch_y = np.zeros((number_from_batch, len(ex_batch_y)))
-            for i in range(number_from_batch):
-                batch_y[i, :] = subbatch[i][1]
-
-            batching_time_end = time.time()
-
             training_time_start = time.time()
-            self.model.fit(x=batch_x, y=batch_y)
+            if g_a % 1 == 0:
+                batch_size = len(self.replay_buffer)
+                number_from_batch = random.randrange(math.floor(batch_size/5), batch_size)
+                if number_from_batch == 0:
+                    number_from_batch = 1
+                subbatch = random.sample(self.replay_buffer, number_from_batch)
+
+                ex_batch_x = subbatch[0][0][0]
+                ex_batch_y = subbatch[0][1][0]
+
+                # op_batch_x = np.zeros((len(self.prob_disc_dict), len(ex_batch_x)))
+                # op_batch_y = np.zeros((len(self.prob_disc_dict), len(ex_batch_y)))
+
+                # i = 0
+                # for key in self.prob_disc_dict.keys():
+                #     op_batch_x[i, :] = np.array(list(key))
+                #     op_batch_y[i, :] = np.array(self.prob_disc_dict[key])
+                #     i += 1
+
+                batch_x = np.zeros((number_from_batch, len(ex_batch_x)))
+                for i in range(number_from_batch):
+                    batch_x[i, :] = subbatch[i][0]
+                batch_y = np.zeros((number_from_batch, len(ex_batch_y)))
+                for i in range(number_from_batch):
+                    batch_y[i, :] = subbatch[i][1]
+
+                self.actor.fit(x=batch_x, y=batch_y)
+
             training_time_end = time.time()
-            self.exploration_rate *= self.exploration_rate_decay_fact
+
+            self.actor.decay_exploration_rate()
             episode_end_time = time.time()
+
             print(f'Episode {g_a}/{self.number_actual_games} '
                   f'time: {(episode_end_time - episode_start_time):.4f}s, '
                   f'\trollout-time: {rollout_time:.4f}s, '
                   f'\ttraining-time: {(training_time_end - training_time_start):.4f}s, '
                   f'\tgen-children: {gen_children_time:.4f}s, '
                   f'\tgen-children-game: {self.gen_game_children_time:.4f}s, '
-                  f'\ttree-policy-time: {tree_policy_loop_time:.4f}s, '
-                  f'\tbatching-time: {(batching_time_end - batching_time_start):.4f}s\n')
+                  f'\ttree-policy-time: {tree_policy_loop_time:.4f}s, ')
             self.gen_game_children_time = 0
 
         # "OPTIMAL" GAME
@@ -211,7 +210,7 @@ class MCTS:
 
                 # state = np.array([final_game.state['board_state'], final_game.state['pid']])
                 state = state.reshape(1, -1)
-                action, action_index = self.pick_action(state, node)
+                action, action_index = self.actor.pick_action(state, node)
                 # print(f'Action {action}')
                 final_game.make_move(action)
             final_game.render()
@@ -249,29 +248,6 @@ class MCTS:
             parent.score_a.append(0)
             parent.Q_a.append(0)
             child.parent = parent
-
-    def pick_action(self, state, node, verbose=False):
-        if random.uniform(0, 1) < 1 - self.exploration_rate:
-            return self.get_greedy_action(state, node, verbose=verbose)
-        else:
-            illegal_move = True
-            index = random.randrange(len(node.edges))
-            while illegal_move:
-                index = random.randrange(len(node.edges))
-                illegal_move = node.children[index].is_illegal
-            return node.edges[index], index
-
-    def get_greedy_action(self, state, node: TreeNode, verbose=False):
-        action_tensor = self.model.predict(state)
-        action_dist = action_tensor.numpy()[0]
-        action_index = np.argmax(action_dist)
-        while node.children[action_index].is_illegal or action_index >= len(node.edges):
-            action_dist[action_index] = 0
-            action_dist = normalize(action_dist)
-            action_index = np.argmax(action_dist)
-        if verbose: print(f'Action dist: {action_dist}')
-        action = node.edges[action_index]
-        return action, action_index
 
     def tree_policy(self, node: TreeNode):
         u = [1*np.sqrt(np.log(node.N)/(1 + N_sa)) for N_sa in node.N_a]
