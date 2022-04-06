@@ -1,22 +1,24 @@
 {
-  "nr_episodes":                  300,
-  "nr_search_games":              200,
+  "train":                        1,
+
+  "nr_episodes":                  1600,
+  "nr_search_games":              1000,
+  "search_time_limit_s":          2,
   "init_exploration_rate":        0.50,
-  "exploration_rate_decay_fact":  0.988,
+  "exploration_rate_decay_fact":  0.995,
   "u_factor":                     1.00,
 
   "learning_rate":                0.001,
-  "in_shape":                     1,
   "nn_dims":                      [1024, 512, 32, 16],
   "hidden_act_func":              "relu",
-  "optimizer":                    "Adam",
-  "M":                            11,
-  "nr_topp_games":                5,
+  "optimizer":                    "SGD",
+  "M":                            6,
+  "nr_topp_games":                4,
   "checkpoint_path":              "test-{episode:04d}.ckpt",
 
   "game":                         "hex",
 
-  "hex_size":                     4,
+  "hex_size":                     5,
 
   "nim_pieces":                   10,
   "nim_k":                        2

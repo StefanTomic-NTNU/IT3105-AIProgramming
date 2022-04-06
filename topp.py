@@ -39,38 +39,38 @@ class Tournament:
 
         print(f'Combinations: {labels}')
 
-        # for pair in combinations:
-        # model1 = pair[0]
-        # model2 = pair[1]
-        model1 = self.models[-1]
-        model2 = self.models[0]
-        if model1.label not in scores.keys(): scores[model1.label] = 0
-        if model2.label not in scores.keys(): scores[model2.label] = 0
-        print(f'Model1: {model1.label}')
-        print(f'Model2: {model2.label}')
+        for pair in combinations:
+            model1 = pair[0]
+            model2 = pair[1]
+            # model1 = self.models[-1]
+            # model2 = self.models[0]
+            if model1.label not in scores.keys(): scores[model1.label] = 0
+            if model2.label not in scores.keys(): scores[model2.label] = 0
+            print(f'Model1: {model1.label}')
+            print(f'Model2: {model2.label}')
 
-        first_player = model1
-        for game_i in range(self.NR_TOPP_GAMES):
-            print(f'\n\n GAME {game_i} \t {model1.label} vs {model2.label}\n')
-            game = self.game.create_copy()
-            next_player = first_player
-            while not game.is_game_over():
+            first_player = model1
+            for game_i in range(self.NR_TOPP_GAMES):
+                print(f'\n\n GAME {game_i} \t {model1.label} vs {model2.label}\n')
+                game = self.game.create_copy()
+                next_player = first_player
+                while not game.is_game_over():
+                    # game.render()
+                    print(f'Model to move: {next_player.label}')
+                    node = TreeNode(game.state)
+                    self._generate_children(node)
+                    state = np.concatenate(
+                        (np.ravel(game.state['board_state']), np.array([game.state['pid']], dtype='float')))
+
+                    state = state.reshape(1, -1)
+                    action, action_index = self._get_greedy_action(state, node, next_player)
+                    next_player = model2 if next_player == model1 else model1
+                    game.make_move(action)
                 game.render()
-                print(f'Model to move: {next_player.label}')
-                node = TreeNode(game.state)
-                self._generate_children(node)
-                state = np.concatenate(
-                    (np.ravel(game.state['board_state']), np.array([game.state['pid']], dtype='float')))
-
-                state = state.reshape(1, -1)
-                action, action_index = self._get_greedy_action(state, node, next_player)
-                next_player = model2 if next_player == model1 else model1
-                game.make_move(action)
-            game.render()
-            winner = model2.label if next_player == model1 else model1.label
-            print(f'WINNER: {winner}')
-            scores[winner] += 1
-            first_player = model2 if first_player == model1 else model1
+                winner = model2.label if next_player == model1 else model1.label
+                print(f'WINNER: {winner}')
+                scores[winner] += 1
+                first_player = model2 if first_player == model1 else model1
 
         print('\n\n --- Tournament of Progressive Policies (TOPP) --- \n')
         print('RESULTS:')

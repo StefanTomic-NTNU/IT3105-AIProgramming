@@ -37,9 +37,10 @@ class TreeNode:
 
 class MCTS:
     def __init__(self, number_actual_games, number_search_games, game, nr_actions, nn,
-                 exploration_rate=0.50, exploration_rate_decay_fact=0.98):
+                 exploration_rate=0.50, exploration_rate_decay_fact=0.98, search_time_limit=2):
         self.number_actual_games = number_actual_games
         self.number_search_games = number_search_games
+        self.search_time_limit = search_time_limit
         self.game = game
         self.nr_actions = nr_actions
         self.model = nn
@@ -73,7 +74,9 @@ class MCTS:
             while not board_a.is_game_over():
                 board_mc = self.game.create_copy()
                 board_mc.set_state(root.state)
+
                 for g_s in range(self.number_search_games):
+                    g_s_time = time.time()
                     board_mc = self.game.create_copy()
                     board_mc.set_state(root.state)
 
@@ -134,6 +137,8 @@ class MCTS:
                             child.Q_a = []
                             child.edges = []
                             child.children = []
+
+                    if g_s_time > self.search_time_limit: break
 
                 # root_state = np.array([root.state['board_state'], root.state['pid']])
                 root_state = np.concatenate((np.ravel(root.state['board_state']), np.array([root.state['pid']], dtype='float')))
