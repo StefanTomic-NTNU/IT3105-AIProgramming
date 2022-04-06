@@ -47,6 +47,7 @@ class MCTS:
         self.prob_disc_dict = {}
         self.exploration_rate = exploration_rate
         self.exploration_rate_decay_fact = exploration_rate_decay_fact
+        self.gen_game_children_time = 0
 
         # Include the epoch in the file name (uses `str.format`)
         self.checkpoint_path = "models/cp-{epoch:04d}.ckpt"
@@ -67,7 +68,8 @@ class MCTS:
             episode_start_time = time.time()
 
             rollout_time = 0
-            tree_policy_time = 0
+            tree_policy_loop_time = 0
+            gen_children_time = 0
             while not board_a.is_game_over():
                 board_mc = self.game.create_copy()
                 board_mc.set_state(root.state)
@@ -75,7 +77,8 @@ class MCTS:
                     board_mc = self.game.create_copy()
                     board_mc.set_state(root.state)
 
-                    tree_policy_time_start = time.time()
+                    tree_policy_loop_time_start = time.time()
+
                     # TREE POLICY
                     node = root
                     while node.children and not node.is_at_end():
@@ -85,9 +88,13 @@ class MCTS:
                         board_mc.make_move(node.edges[chosen_node])
                         node = node.children[chosen_node]
 
+                    tree_policy_loop_time_end = time.time()
+                    tree_policy_loop_time += tree_policy_loop_time_end - tree_policy_loop_time_start
+
+                    gen_children_time_start = time.time()
                     self.generate_children(node)    # Blue nodes
-                    tree_policy_time_end = time.time()
-                    tree_policy_time += tree_policy_time_end - tree_policy_time_start
+                    gen_children_time_end = time.time()
+                    gen_children_time += gen_children_time_end -gen_children_time_start
 
                     # ROLLOUT
                     grey_node = node
@@ -176,8 +183,11 @@ class MCTS:
                   f'time: {(episode_end_time - episode_start_time):.4f}s, '
                   f'\trollout-time: {rollout_time:.4f}s, '
                   f'\ttraining-time: {(training_time_end - training_time_start):.4f}s, '
-                  f'\ttree-policy-time: {tree_policy_time:.4f}s, '
+                  f'\tgen-children: {gen_children_time:.4f}s, '
+                  f'\tgen-children-game: {self.gen_game_children_time:.4f}s, '
+                  f'\ttree-policy-time: {tree_policy_loop_time:.4f}s, '
                   f'\tbatching-time: {(batching_time_end - batching_time_start):.4f}s\n')
+            self.gen_game_children_time = 0
 
         # "OPTIMAL" GAME
         self.exploration_rate = 0
@@ -210,7 +220,10 @@ class MCTS:
 
     def generate_children(self, tree_node: TreeNode):
         if len(tree_node.children) == 0 and tree_node.state:
+            gen_game_children_start_time = time.time()
             edges, states, illegal_edges, illegal_states = self.game.generate_children_(tree_node.state)
+            gen_game_children_end_time = time.time()
+            self.gen_game_children_time += gen_game_children_end_time - gen_game_children_start_time
             children = [TreeNode(child) for child in states]
             illegal_children = [TreeNode(illegal_child) for illegal_child in illegal_states]
             for i in range(len(children)):
@@ -225,7 +238,7 @@ class MCTS:
             parent.children.append(child)
             parent.edges.append(edge)
             if not child.is_illegal:
-                parent.N_a.append(1)    # TODO: to avoid 0 log
+                parent.N_a.append(1)
             else:
                 parent.N_a.append(0)
             parent.score_a.append(0)

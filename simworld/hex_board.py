@@ -1,5 +1,6 @@
 import copy
 import random
+import time
 
 import numpy as np
 
@@ -179,8 +180,6 @@ class Hex:
         return game
 
     def step_(self, state, action):
-        if self.is_game_over_(state):
-            return
         new_state = {
             'board_state': state['board_state'].copy(),
             'pid': copy.copy(state['pid'])
@@ -194,8 +193,26 @@ class Hex:
         return new_state
 
     def generate_children_(self, state):
-        edges = [action for action in self.get_legal_actions_(state)]
+        # edges_s_time = time.time()
+        # edges_e_time = time.time()
+        # edges_time = edges_e_time - edges_s_time
+        #
+        # iedges_s_time = time.time()
+        # iedges_e_time = time.time()
+        # iedges_time = iedges_e_time - iedges_s_time
+        #
+        # ichild_s_time = time.time()
+        # ichild_e_time = time.time()
+        # ichild_time = ichild_e_time - ichild_s_time
+        #
+        # child_s_time = time.time()
+        # child_e_time = time.time()
+        # child_time = child_e_time - child_s_time
+
+        # print(f'Edges: {edges_time}\t Iedges: {iedges_time}\t Ichild: {ichild_time}\t Child: {child_time}')
+
+        edges = self.get_legal_actions_(state)
         illegal_edges = np.setxor1d(np.array(edges), self.get_all_actions()).tolist()
         illegal_children = [None for _ in illegal_edges]
-        children = [self.step_(state, action) for action in edges]
+        children = [self.step_(state, action) for action in edges] if not self.is_game_over() else []
         return edges, children, illegal_edges, illegal_children
