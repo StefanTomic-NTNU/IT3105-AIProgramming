@@ -1,20 +1,22 @@
 {
-  "train":                        0,
+  "train":                        1,
+  "topp":                         1,
 
-  "nr_episodes":                  200,
-  "nr_search_games":              1000,
-  "search_time_limit_s":          2,
+  "nr_episodes":                  1500,
+  "nr_search_games":              2000,
+  "search_time_limit_s":          2.00,
   "init_exploration_rate":        0.50,
-  "exploration_rate_decay_fact":  0.995,
-  "u_factor":                     1.00,
+  "topp_exploration_rate":        0.25,
+  "exploration_rate_decay_fact":  0.998,
+  "u_factor":                     1.25,
 
-  "learning_rate":                0.001,
-  "nn_dims":                      [1024, 512, 32, 16],
+  "learning_rate":                0.00008,
+  "nn_dims":                      [512, 2048, 1024, 512, 128],
   "hidden_act_func":              "relu",
   "optimizer":                    "SGD",
-  "M":                            6,
-  "nr_topp_games":                10,
-  "checkpoint_path":              "test2-{episode:04d}.ckpt",
+  "M":                            16,
+  "nr_topp_games":                11,
+  "checkpoint_path":              "overnight2-{episode:04d}.ckpt",
 
   "game":                         "hex",
 

@@ -6,29 +6,24 @@ from neuralnet import NeuralNet
 
 
 class Tournament:
-    def __init__(self, nr_topp_games, checkpoint_path, M, episodes_per_game, game,
-                 lrate=0.01, optimizer='SGD', loss='categorical_crossentropy', in_shape=(2,),
-                 nn_dims=(1024, 512, 32, 1), hidden_act_func='relu'
-                 ):
+    def __init__(self, nr_topp_games, checkpoint_path, M, episodes_per_game, game, topp_exploration_rate=0.00):
         self.NR_TOPP_GAMES = nr_topp_games
         self.CHECKPOINT_PATH = checkpoint_path
         self.M = M
         self.EPISODES_PER_GAME = episodes_per_game
         self.actors = []
         self.game = game
-        self.in_shape = in_shape
-        self.nn_dims = nn_dims
+        self.topp_exploration_rate = topp_exploration_rate
 
     def load_actors(self):
         for i in range(self.M + 1):
             number = i * self.EPISODES_PER_GAME
             model = NeuralNet(checkpoint_path=self.CHECKPOINT_PATH,
                               episodes_per_game=self.EPISODES_PER_GAME,
-                              label=str(number),
-                              in_shape=self.in_shape,
-                              nn_dims=self.nn_dims)
+                              label=str(number))
             model.load(number)
-            self.actors.append(Actor(model, exploration_rate=0, exploration_rate_decay_fact=1, label=str(number)))
+            self.actors.append(Actor(model, exploration_rate=self.topp_exploration_rate,
+                                     exploration_rate_decay_fact=1, label=str(number)))
             print(f'\n\n{model.label}')
             print(model.model.layers[0].get_weights()[1])
 

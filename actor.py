@@ -39,6 +39,9 @@ class Actor:
         action = node.edges[action_index]
         return action, action_index
 
+    def save(self):
+        self.nn.save()
+
     def decay_exploration_rate(self):
         self.exploration_rate *= self.exploration_rate_decay_fact
 

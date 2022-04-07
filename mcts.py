@@ -8,6 +8,7 @@ from tensorflow import keras as KER
 import matplotlib.pyplot as plt
 import time
 
+from neuralnet import NeuralNet
 from simworld.nim import Nim
 
 
@@ -150,6 +151,7 @@ class MCTS:
                 root = root.children[action_index]
                 root.parent = None
 
+            # TRAIN ACTOR
             training_time_start = time.time()
             if g_a % 1 == 0:
                 batch_size = len(self.replay_buffer)
@@ -160,15 +162,6 @@ class MCTS:
 
                 ex_batch_x = subbatch[0][0][0]
                 ex_batch_y = subbatch[0][1][0]
-
-                # op_batch_x = np.zeros((len(self.prob_disc_dict), len(ex_batch_x)))
-                # op_batch_y = np.zeros((len(self.prob_disc_dict), len(ex_batch_y)))
-
-                # i = 0
-                # for key in self.prob_disc_dict.keys():
-                #     op_batch_x[i, :] = np.array(list(key))
-                #     op_batch_y[i, :] = np.array(self.prob_disc_dict[key])
-                #     i += 1
 
                 batch_x = np.zeros((number_from_batch, len(ex_batch_x)))
                 for i in range(number_from_batch):

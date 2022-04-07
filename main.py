@@ -55,16 +55,20 @@ if __name__ == '__main__':
                    hidden_act_func=config['hidden_act_func'], optimizer=config['optimizer'],
                    episodes_per_game=episodes_per_game, checkpoint_path=checkpoint_path)
 
-    actor = Actor(nn, exploration_rate=config['init_exploration_rate'], exploration_rate_decay_fact=config['exploration_rate_decay_fact'])
+    # nn.load(500)
+
+    actor = Actor(nn, exploration_rate=config['init_exploration_rate'],
+                  exploration_rate_decay_fact=config['exploration_rate_decay_fact'])
 
     mcts = MCTS(episodes, config['nr_search_games'], game, nn_dims[-1], actor,
                 search_time_limit=config['search_time_limit_s'])
 
     topp = Tournament(config['nr_topp_games'], checkpoint_path, M, episodes_per_game, game,
-                      in_shape=in_shape, nn_dims=nn_dims)
+                      topp_exploration_rate=config['topp_exploration_rate'])
 
     if config['train']:
         mcts.run()
 
-    topp.load_actors()
-    topp.play_tournament()
+    if config['topp']:
+        topp.load_actors()
+        topp.play_tournament()
