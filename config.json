@@ -1,8 +1,8 @@
 {
-  "train":                        1,
+  "train":                        0,
   "topp":                         1,
 
-  "nr_episodes":                  1500,
+  "nr_episodes":                  1400,
   "nr_search_games":              2000,
   "search_time_limit_s":          2.00,
   "init_exploration_rate":        0.50,
@@ -11,11 +11,11 @@
   "u_factor":                     1.25,
 
   "learning_rate":                0.00008,
-  "nn_dims":                      [512, 2048, 1024, 512, 128],
+  "nn_dims":                      [512, 2048, 1024, 512],
   "hidden_act_func":              "relu",
   "optimizer":                    "SGD",
-  "M":                            16,
-  "nr_topp_games":                11,
+  "M":                            15,
+  "nr_topp_games":                10,
   "checkpoint_path":              "overnight2-{episode:04d}.ckpt",
 
   "game":                         "hex",

@@ -82,12 +82,13 @@ class MCTS:
 
                     # TREE POLICY
                     node = root
-                    while node.children and not node.is_at_end():
-                        chosen_node = self.tree_policy(node)
-                        if chosen_node is None: break
-                        if node.children[chosen_node].state is None: break
-                        board_mc.make_move(node.edges[chosen_node])
-                        node = node.children[chosen_node]
+                    # while node.children and not node.is_at_end():
+                    #     chosen_node = self.tree_policy(node)
+                    #     if chosen_node is None: break
+                    #     if node.children[chosen_node].state is None: break
+                    #     board_mc.make_move(node.edges[chosen_node])
+                    #     node = node.children[chosen_node]
+                    node = self.pick_tree_node(node, board_mc)
 
                     tree_policy_loop_time_end = time.time()
                     tree_policy_loop_time += tree_policy_loop_time_end - tree_policy_loop_time_start
@@ -100,32 +101,34 @@ class MCTS:
                     # ROLLOUT
                     grey_node = node
                     single_rollout_start = time.time()
-                    while node.state and not board_mc.is_game_over():
-                        self.generate_children(node)
-
-                        nn_input = np.concatenate((np.ravel(node.state['board_state']), np.array([node.state['pid']], dtype='float')))
-                        # nn_input = np.array([node.state['board_state'], node.state['pid']])
-                        nn_input = nn_input.reshape(1, -1)
-                        action, action_index = self.actor.pick_action(nn_input, node)
-                        if not board_mc.is_game_over():
-                            board_mc.make_move(action)
-                            node = node.children[action_index]
+                    # while node.state and not board_mc.is_game_over():
+                    #     self.generate_children(node)
+                    #
+                    #     nn_input = np.concatenate((np.ravel(node.state['board_state']), np.array([node.state['pid']], dtype='float')))
+                    #     # nn_input = np.array([node.state['board_state'], node.state['pid']])
+                    #     nn_input = nn_input.reshape(1, -1)
+                    #     action, action_index = self.actor.pick_action(nn_input, node)
+                    #     if not board_mc.is_game_over():
+                    #         board_mc.make_move(action)
+                    #         node = node.children[action_index]
+                    node = self.rollout(node, board_mc)
                     single_rollout_end = time.time()
                     rollout_time += single_rollout_end - single_rollout_start
 
                     # BACKPROPAGATION
-                    evaluation = -1 if board_mc.state['pid'] == 1 else 1
-                    parent = node.parent
-                    while parent:
-                        node.score += evaluation
-                        node.N += 1
-                        node.Q = node.score / node.N
-                        edge_index = node.parent.children.index(node)
-                        node.parent.score_a[edge_index] += evaluation
-                        node.parent.N_a[edge_index] += 1
-                        node.parent.Q_a[edge_index] = node.parent.score_a[edge_index] / node.parent.N_a[edge_index]
-                        node = node.parent
-                        parent = node.parent
+                    self.backpropagate(node, board_mc)
+                    # evaluation = -1 if board_mc.state['pid'] == 1 else 1
+                    # parent = node.parent
+                    # while parent:
+                    #     node.score += evaluation
+                    #     node.N += 1
+                    #     node.Q = node.score / node.N
+                    #     edge_index = node.parent.children.index(node)
+                    #     node.parent.score_a[edge_index] += evaluation
+                    #     node.parent.N_a[edge_index] += 1
+                    #     node.parent.Q_a[edge_index] = node.parent.score_a[edge_index] / node.parent.N_a[edge_index]
+                    #     node = node.parent
+                    #     parent = node.parent
 
                     # Cleanup children:
                     if not grey_node.is_at_end():
@@ -187,28 +190,29 @@ class MCTS:
             self.gen_game_children_time = 0
 
         # "OPTIMAL" GAME
-        self.exploration_rate = 0
-        # self.model.load_weights(100)
-        for init_player in (1, 2):
-            final_game = self.game.create_copy()
-            final_game.state['pid'] = init_player
-            print(init_player)
-            while not final_game.is_game_over():
-                final_game.render()
-                # print(f'Final game pieces: {final_game.state["board_state"]} \t Player: {final_game.state["pid"]}')
-                node = TreeNode(final_game.state)
-                self.generate_children(node)
-                state = np.concatenate(
-                    (np.ravel(final_game.state['board_state']), np.array([final_game.state['pid']], dtype='float')))
-
-                # state = np.array([final_game.state['board_state'], final_game.state['pid']])
-                state = state.reshape(1, -1)
-                action, action_index = self.actor.pick_action(state, node)
-                # print(f'Action {action}')
-                final_game.make_move(action)
-            final_game.render()
-            winner = 3 - final_game.state['pid']
-            print(f'Winner is player {winner}\n\n')
+        # self.exploration_rate = 0
+        # # self.model.load_weights(100)
+        # for init_player in (1, 2):
+        #     final_game = self.game.create_copy()
+        #     final_game.state['pid'] = init_player
+        #     print(init_player)
+        #     while not final_game.is_game_over():
+        #         final_game.render()
+        #         # print(f'Final game pieces: {final_game.state["board_state"]} \t Player: {final_game.state["pid"]}')
+        #         node = TreeNode(final_game.state)
+        #         self.generate_children(node)
+        #         state = np.concatenate(
+        #             (np.ravel(final_game.state['board_state']), np.array([final_game.state['pid']], dtype='float')))
+        #
+        #         # state = np.array([final_game.state['board_state'], final_game.state['pid']])
+        #         state = state.reshape(1, -1)
+        #         action, action_index = self.actor.pick_action(state, node)
+        #         # print(f'Action {action}')
+        #         final_game.make_move(action)
+        #     final_game.render()
+        #     winner = 3 - final_game.state['pid']
+        #     print(f'Winner is player {winner}\n\n')
+        self.play_optimal_game()
         runtime_end = time.time()
         runtime = runtime_end - runtime_start
         minutes = np.floor_divide(runtime, 60)
@@ -264,6 +268,69 @@ class MCTS:
                 if np.sum(combined) == 100000 * self.nr_actions:
                     return None
         return policy
+
+    def pick_tree_node(self, node, board_mc):
+        new_node = node
+        while new_node.children and not new_node.is_at_end():
+            chosen_node = self.tree_policy(new_node)
+            if chosen_node is None: break
+            if new_node.children[chosen_node].state is None: break
+            board_mc.make_move(new_node.edges[chosen_node])
+            new_node = new_node.children[chosen_node]
+        return new_node
+
+    def rollout(self, node, board_mc):
+        new_node = node
+        while new_node.state and not board_mc.is_game_over():
+            self.generate_children(new_node)
+            nn_input = np.concatenate(
+                (np.ravel(new_node.state['board_state']), np.array([new_node.state['pid']], dtype='float')))
+            # nn_input = np.array([node.state['board_state'], node.state['pid']])
+            nn_input = nn_input.reshape(1, -1)
+            action, action_index = self.actor.pick_action(nn_input, new_node)
+            if not board_mc.is_game_over():
+                board_mc.make_move(action)
+                new_node = new_node.children[action_index]
+        return new_node
+
+    def backpropagate(self, node, board_mc):
+        new_node = node
+        evaluation = -1 if board_mc.state['pid'] == 1 else 1
+        parent = new_node.parent
+        while parent:
+            new_node.score += evaluation
+            new_node.N += 1
+            new_node.Q = new_node.score / new_node.N
+            edge_index = new_node.parent.children.index(new_node)
+            new_node.parent.score_a[edge_index] += evaluation
+            new_node.parent.N_a[edge_index] += 1
+            new_node.parent.Q_a[edge_index] = new_node.parent.score_a[edge_index] / new_node.parent.N_a[edge_index]
+            new_node = new_node.parent
+            parent = new_node.parent
+
+    def play_optimal_game(self):
+        self.exploration_rate = 0
+        # self.model.load_weights(100)
+        for init_player in (1, 2):
+            final_game = self.game.create_copy()
+            final_game.state['pid'] = init_player
+            print(init_player)
+            while not final_game.is_game_over():
+                final_game.render()
+                # print(f'Final game pieces: {final_game.state["board_state"]} \t Player: {final_game.state["pid"]}')
+                node = TreeNode(final_game.state)
+                self.generate_children(node)
+                state = np.concatenate(
+                    (np.ravel(final_game.state['board_state']), np.array([final_game.state['pid']], dtype='float')))
+
+                # state = np.array([final_game.state['board_state'], final_game.state['pid']])
+                state = state.reshape(1, -1)
+                action, action_index = self.actor.pick_action(state, node)
+                # print(f'Action {action}')
+                final_game.make_move(action)
+            final_game.render()
+            winner = 3 - final_game.state['pid']
+            print(f'Winner is player {winner}\n\n')
 
 
 def normalize(arr: np.array):

@@ -19,9 +19,6 @@ def read_config():
 
 
 if __name__ == '__main__':
-    tf.get_logger().setLevel('WARNING')
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-    # tf.logging.set_verbosity(tf.logging.WARNING)
 
     config = read_config()
 
@@ -37,7 +34,7 @@ if __name__ == '__main__':
         checkpoint_path = 'models/hex' + \
                           str(config['hex_size']) + '/' + \
                           config['checkpoint_path']
-        nn_dims[-1] = size ** 2
+        nn_dims.append(size ** 2)
         in_shape = (2 * (size ** 2) + 1, )
     elif game_name == 'nim' or game_name == 'Nim':
         k = config['nim_k']
@@ -45,7 +42,7 @@ if __name__ == '__main__':
         checkpoint_path = 'models/nim' + \
                           str(config['nim_k']) + '-' + str(config['nim_k']) + '/' + \
                           config['checkpoint_path']
-        nn_dims[-1] = k
+        nn_dims.append(k)
         in_shape = (2, )
     else:
         raise Exception
