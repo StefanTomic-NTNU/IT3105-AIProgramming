@@ -25,7 +25,7 @@ class Tournament:
             self.actors.append(Actor(model, exploration_rate=self.topp_exploration_rate,
                                      exploration_rate_decay_fact=1, label=str(number)))
             print(f'\n\n{model.label}')
-            print(model.model.layers[0].get_weights()[1])
+            # print(model.model.layers[0].get_weights()[1])
 
     def play_tournament(self):
         combinations = [(a, b) for idx, a in enumerate(self.actors) for b in self.actors[idx + 1:]]

@@ -8,14 +8,14 @@
   "init_exploration_rate":        0.50,
   "topp_exploration_rate":        0.25,
   "exploration_rate_decay_fact":  0.998,
-  "u_factor":                     1.25,
+  "u_factor":                     1.00,
 
   "learning_rate":                0.00008,
   "nn_dims":                      [512, 2048, 1024, 512],
   "hidden_act_func":              "relu",
   "optimizer":                    "SGD",
-  "M":                            15,
-  "nr_topp_games":                10,
+  "M":                            8,
+  "nr_topp_games":                20,
   "checkpoint_path":              "overnight2-{episode:04d}.ckpt",
 
   "game":                         "hex",
