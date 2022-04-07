@@ -1,7 +1,7 @@
 import numpy as np
 
 from actor import Actor
-from mcts import TreeNode
+from mcts import generate_children, TreeNode
 from neuralnet import NeuralNet
 
 
@@ -25,7 +25,6 @@ class Tournament:
             self.actors.append(Actor(model, exploration_rate=self.topp_exploration_rate,
                                      exploration_rate_decay_fact=1, label=str(number)))
             print(f'\n\n{model.label}')
-            # print(model.model.layers[0].get_weights()[1])
 
     def play_tournament(self):
         combinations = [(a, b) for idx, a in enumerate(self.actors) for b in self.actors[idx + 1:]]
@@ -51,9 +50,9 @@ class Tournament:
                 next_player = first_player
                 while not game.is_game_over():
                     # game.render()
-                    print(f'Model to move: {next_player.label}')
+                    # print(f'Model to move: {next_player.label}')
                     node = TreeNode(game.state)
-                    self._generate_children(node)
+                    generate_children(node, game)
                     state = np.concatenate(
                         (np.ravel(game.state['board_state']), np.array([game.state['pid']], dtype='float')))
 
@@ -61,7 +60,7 @@ class Tournament:
                     action, action_index = next_player.pick_action(state, node)
                     next_player = actor2 if next_player == actor1 else actor1
                     game.make_move(action)
-                game.render()
+                # game.render()
                 winner = actor2.label if next_player == actor1 else actor1.label
                 print(f'WINNER: {winner}')
                 scores[winner] += 1
@@ -70,27 +69,3 @@ class Tournament:
         print('\n\n --- Tournament of Progressive Policies (TOPP) --- \n')
         print('RESULTS:')
         [print(f'Actor{label}: \t{scores[label]}') for label in scores.keys()]
-
-    def _generate_children(self, tree_node: TreeNode):
-        if len(tree_node.children) == 0 and tree_node.state:
-            edges, states, illegal_edges, illegal_states = self.game.generate_children_(tree_node.state)
-            children = [TreeNode(child) for child in states]
-            illegal_children = [TreeNode(illegal_child) for illegal_child in illegal_states]
-            for i in range(len(children)):
-                self._add_child(tree_node, children[i], edges[i])
-            for j in range(len(illegal_children)):
-                illegal_children[j].is_illegal = True
-                illegal_children[j].N = 0
-                self._add_child(tree_node, illegal_children[j], illegal_edges[j])
-
-    def _add_child(self, parent, child, edge):
-        if child not in parent.children:
-            parent.children.append(child)
-            parent.edges.append(edge)
-            if not child.is_illegal:
-                parent.N_a.append(1)
-            else:
-                parent.N_a.append(0)
-            parent.score_a.append(0)
-            parent.Q_a.append(0)
-            child.parent = parent

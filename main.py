@@ -1,13 +1,10 @@
 import json
-import os
 
 from actor import Actor
-from mcts import MCTS, TreeNode
+from mcts import MCTS
 from neuralnet import NeuralNet
 from simworld.hex_board import Hex
 from simworld.nim import Nim
-import numpy as np
-import tensorflow as tf
 
 from topp import Tournament
 
@@ -51,8 +48,6 @@ if __name__ == '__main__':
                    nn_dims=tuple(nn_dims),
                    hidden_act_func=config['hidden_act_func'], optimizer=config['optimizer'],
                    episodes_per_game=episodes_per_game, checkpoint_path=checkpoint_path)
-
-    # nn.load(500)
 
     actor = Actor(nn, exploration_rate=config['init_exploration_rate'],
                   exploration_rate_decay_fact=config['exploration_rate_decay_fact'])

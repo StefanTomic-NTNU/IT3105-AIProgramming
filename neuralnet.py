@@ -33,8 +33,8 @@ class NeuralNet:
         return model
 
     def predict(self, state):
-        # return self.model(state)
-        return self.lite_model.predict(state)
+        return self.model(state).numpy()
+        # return self.lite_model.predict(state)
 
     def fit(self, x, y, callbacks=None):
         if self.episode_count == 0: self.save()
@@ -42,7 +42,7 @@ class NeuralNet:
         self.model.fit(x=x, y=y, callbacks=callbacks)
         if self.episode_count % self.episodes_per_game == 0: self.save()
         start_time = time.time()
-        self.lite_model = LiteModel.from_keras_model(self.model)
+        # self.lite_model = LiteModel.from_keras_model(self.model)
         end_time = time.time()
         print(f'Lite model construction time: {(end_time-start_time):.4f}')
 
@@ -51,12 +51,8 @@ class NeuralNet:
         self.model.save(self.checkpoint_path.format(episode=self.episode_count))
 
     def load(self, episode_count):
-        # print('\nBefore: ')
-        # print(self.model.layers[0].get_weights()[0])
         self.model = tf.keras.models.load_model(self.checkpoint_path.format(episode=episode_count))
         self.lite_model = LiteModel.from_keras_model(self.model)
-        # print('After:')
-        # print(self.model.layers[0].get_weights()[0])
 
 
 class LiteModel:
