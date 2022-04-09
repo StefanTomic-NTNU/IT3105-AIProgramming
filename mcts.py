@@ -139,7 +139,7 @@ class MCTS:
             training_time_start = time.time()
             if g_a % 1 == 0:
                 batch_size = len(self.replay_buffer)
-                number_from_batch = random.randrange(math.floor(batch_size/2), batch_size)
+                number_from_batch = random.randrange(math.floor(batch_size/5), batch_size)
                 if number_from_batch == 0:
                     number_from_batch = 1
                 subbatch = random.sample(self.replay_buffer, number_from_batch)
@@ -256,4 +256,3 @@ class MCTS:
             final_game.render()
             winner = 3 - final_game.state['pid']
             print(f'Winner is player {winner}\n\n')
-
