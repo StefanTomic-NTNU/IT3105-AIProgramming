@@ -90,8 +90,10 @@ class Hex:
         return pieces
 
     def set_state(self, state):
-        self.state = copy.copy(state)   # TODO: Change
         board_state = state['board_state'].copy()
+        self.state = {'board_state': board_state,
+                      'pid': copy.copy(state['pid'])}
+        # self.state = copy.copy(state)
         for i in range(len(board_state)):
             c = i % self.SIZE
             r = np.floor_divide(i, self.SIZE)
@@ -108,7 +110,6 @@ class Hex:
         return np.argwhere(np.all(self.state['board_state'] == 0, axis=1) == True).ravel()
 
     def get_legal_actions_(self, state):
-        # print(state['board_state'])
         return np.argwhere(np.all(state['board_state'] == 0, axis=1) == True).ravel()
 
     def get_all_actions(self):

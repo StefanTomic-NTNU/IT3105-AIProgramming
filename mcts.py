@@ -68,6 +68,7 @@ class MCTS:
         self.actor = actor
         self.replay_buffer = []
         self.prob_disc_dict = {}
+        self.rollout_time = 0
 
     def run(self):
         runtime_start = time.time()
@@ -76,7 +77,7 @@ class MCTS:
             root = TreeNode(board_a.get_state())
             episode_start_time = time.time()
 
-            rollout_time = 0
+            episode_rollout_time = 0
             tree_policy_loop_time = 0
             gen_children_time = 0
             while not board_a.is_game_over():
@@ -85,6 +86,7 @@ class MCTS:
 
                 g_s_start_time = time.time()
                 for g_s in range(self.number_search_games):
+                    self.rollout_time = 0
                     board_mc = self.game.create_copy()
                     board_mc.set_state(root.state)
 
@@ -107,7 +109,7 @@ class MCTS:
                     single_rollout_start = time.time()
                     node = self.rollout(node, board_mc)
                     single_rollout_end = time.time()
-                    rollout_time += single_rollout_end - single_rollout_start
+                    episode_rollout_time += single_rollout_end - single_rollout_start
 
                     # BACKPROPAGATION
                     self.backpropagate(node, board_mc)
@@ -161,9 +163,9 @@ class MCTS:
             self.actor.decay_exploration_rate()
             episode_end_time = time.time()
 
-            print(f'Episode {g_a}/{self.number_actual_games} '
+            print(f'Episode {g_a+1}/{self.number_actual_games} '
                   f'time: {(episode_end_time - episode_start_time):.4f}s, '
-                  f'\trollout-time: {rollout_time:.4f}s, '
+                  f'\trollout-time: {episode_rollout_time:.4f}s, '
                   f'\ttraining-time: {(training_time_end - training_time_start):.4f}s, '
                   f'\tgen-children: {gen_children_time:.4f}s, '
                   f'\ttree-policy-time: {tree_policy_loop_time:.4f}s, ')
@@ -211,16 +213,27 @@ class MCTS:
 
     def rollout(self, node: TreeNode, board_mc):
         new_node = node
+        roll_gen_cld_sum = 0
+        pick_action_sum = 0
         while new_node.state and not board_mc.is_game_over():
+            roll_gen_cld_start = time.time_ns()
             generate_children(new_node, board_mc)
+            roll_gen_cld_end = time.time_ns()
+
+            pick_action_time_start = time.time_ns()
             nn_input = np.concatenate(
                 (np.ravel(new_node.state['board_state']), np.array([new_node.state['pid']], dtype='float')))
             # nn_input = np.array([node.state['board_state'], node.state['pid']])
             nn_input = nn_input.reshape(1, -1)
             action, action_index = self.actor.pick_action(nn_input, new_node)
+            pick_action_time_end = time.time_ns()
+            roll_gen_cld_sum += roll_gen_cld_end - roll_gen_cld_start
+            pick_action_sum += pick_action_time_end - pick_action_time_start
             if not board_mc.is_game_over():
                 board_mc.make_move(action)
                 new_node = new_node.children[action_index]
+        self.rollout_time += roll_gen_cld_sum
+        print(f'Roll gen cld: {roll_gen_cld_sum / 1_000_000_000}s \t Roll pick action {pick_action_sum / 1_000_000_000}s')
         return new_node
 
     def backpropagate(self, node: TreeNode, board_mc):

@@ -47,7 +47,8 @@ if __name__ == '__main__':
     nn = NeuralNet(lrate=config['learning_rate'], in_shape=in_shape,
                    nn_dims=tuple(nn_dims),
                    hidden_act_func=config['hidden_act_func'], optimizer=config['optimizer'],
-                   episodes_per_game=episodes_per_game, checkpoint_path=checkpoint_path)
+                   episodes_per_game=episodes_per_game, checkpoint_path=checkpoint_path,
+                   use_lite_model=config['use_lite_model'])
 
     actor = Actor(nn, exploration_rate=config['init_exploration_rate'],
                   exploration_rate_decay_fact=config['exploration_rate_decay_fact'])
