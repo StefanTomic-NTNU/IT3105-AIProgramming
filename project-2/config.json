@@ -1,0 +1,29 @@
+{
+  "train":                        1,
+  "topp":                         0,
+  "visualize_topp":               0,
+
+  "nr_episodes":                  10,
+  "nr_search_games":              100,
+  "search_time_limit_s":          5.00,
+  "init_exploration_rate":        0.50,
+  "topp_exploration_rate":        0.25,
+  "exploration_rate_decay_fact":  0.95,
+  "u_factor":                     1.00,
+
+  "use_lite_model":               1,
+  "learning_rate":                0.00005,
+  "nn_dims":                      [512, 2024],
+  "hidden_act_func":              "linear",
+  "optimizer":                    "SGD",
+  "M":                            6,
+  "nr_topp_games":                50,
+  "checkpoint_path":              "flyplass-{episode:04d}.ckpt",
+
+  "game":                         "hex",
+
+  "hex_size":                     4,
+
+  "nim_pieces":                   10,
+  "nim_k":                        2
+}
