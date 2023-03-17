@@ -1,0 +1,32 @@
+sarsa:
+  debug_info:             True
+  gen_graphs:             True  # Logs data and displays it in graphs
+  episodes:               150
+  max_steps:              1000
+
+simworld:
+  animate:                True
+  timestep:               0.30
+  goal_height:            6.00
+  mass:                   1.00  # Mass of each segment
+  length:                 1.00  # Length of each segment
+  length_end_mass:        0.50  # Length from endpoint to center-of-mass
+  gravity:                9.80
+  tiles_per_dim:          [ 3, 3, 3, 3 ]  # Tiles per dimension in tile coarse coder
+  tilings:                4     # Number of tilings used for coarse coding
+
+actor:
+  lr:                     0.08
+  discount_fact:          0.99
+  elig_decay_rate:        0.95
+  init_exploration_rate:  0.50
+  exploration_decay_fact: 0.975
+
+critic:
+  lr:                     0.0001
+  discount_fact:          0.99
+  elig_decay_rate:        0.10
+  input_dim:              1024
+  dims:                   [] # Hidden layers are unnecessary according to specs
+  activation:             relu
+  optimizer:              Adam
